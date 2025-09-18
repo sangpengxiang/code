@@ -565,3 +565,137 @@ class Solution {
         return root;
     }
 }
+
+///////////////////////////////
+// 环形链表
+/*
+ * 快慢指针
+ */
+public class Solution {
+    public boolean hasCycle(ListNode head) {
+        ListNode fast,slow;
+        fast = slow = head;
+        while(fast !=null && fast.next!= null){
+            fast = fast.next.next;
+            slow = slow.next;
+            if(fast==slow) return true;
+        }
+        return false;
+    }
+}
+// 环形链表II 找到入口
+/*
+ * 相遇后，slow从头开始
+ */
+public class Solution {
+    public ListNode detectCycle(ListNode head) {
+        ListNode slow, fast;
+        slow = head;
+        fast = head;
+//        int mres = 0;
+        while (fast!=null&&fast.next!=null){
+            slow = slow.next;
+            fast = fast.next.next;
+            if (slow==fast) {
+                break;
+            }
+        }
+        if (fast==null||fast.next==null) return null; 
+        slow = head;
+        while (slow!=fast){
+            slow = slow.next;
+            fast = fast.next;
+        }
+        return slow;
+    }
+}
+// 合并两个有序链表
+/*
+ * 可以使用递归或迭代，这里使用迭代
+ */
+
+class Solution {
+    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
+        ListNode res = new ListNode(0);
+        ListNode mlist = res;
+
+        while (list1!=null&&list2!=null){
+            if (list1.val<list2.val){
+                res.next = list1;
+                res = res.next;
+                list1 = list1.next;
+            }else {
+                res.next = list2;
+                res = res.next;
+                list2 = list2.next;
+            }
+        }
+        if (list1==null){
+            res.next=list2;
+        }
+        if (list2==null){
+            res.next=list1;
+        }
+        return mlist.next;
+    }
+}
+// 合并N个有序链表
+/*
+ * 中间for一下，不过这个时间比较慢
+ */
+class Solution {
+    public ListNode mergeKLists(ListNode[] lists) {
+        // 合并n个升序链表
+        ListNode mres = new ListNode(-1);
+        ListNode res = mres;
+        ListNode temnode = new ListNode(0);
+        while (temnode.val!=Integer.MAX_VALUE){
+            temnode = new ListNode(Integer.MAX_VALUE);
+            int num = -1;
+            for (int i=0; i<lists.length; i++){
+                if (lists[i]!=null&&temnode.val>lists[i].val){
+                    temnode = lists[i];
+                //    lists[i] = lists[i].next;
+                    num = i;
+                }
+            }
+            if (temnode.val!=Integer.MAX_VALUE){
+                mres.next = temnode;
+                lists[num] = lists[num].next;
+                mres = mres.next;
+            }
+        }
+        return res.next;
+    }
+}
+// 两数相加
+/*
+ * 最后也可能进位
+ */
+
+class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode pre = new ListNode(0);
+        ListNode cur = pre;
+        int carry = 0;
+        while(l1 != null || l2 != null) {
+            int x = l1 == null ? 0 : l1.val;
+            int y = l2 == null ? 0 : l2.val;
+            int sum = x + y + carry;
+            
+            carry = sum / 10;
+            sum = sum % 10;
+            cur.next = new ListNode(sum);
+
+            cur = cur.next;
+            if(l1 != null)
+                l1 = l1.next;
+            if(l2 != null)
+                l2 = l2.next;
+        }
+        if(carry == 1) {
+            cur.next = new ListNode(carry);
+        }
+        return pre.next;
+    }
+}
