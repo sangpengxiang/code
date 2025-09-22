@@ -2,6 +2,8 @@ import java.util.*;
 
 import javax.swing.tree.TreeNode;
 
+import org.w3c.dom.Node;
+
 class Index {
     public Index() {
 
@@ -1487,5 +1489,558 @@ class Solution {
             }
         }
         return false;
+    }
+}
+
+
+// 课程表
+/*
+ *  根据依赖关系，构建邻接表、入度数组。
+    选取入度为 0 的数据，根据邻接表，减小依赖它的数据的入度。
+    找出入度变为 0 的数据，重复第 2 步。
+    直至所有数据的入度为 0，得到排序，如果还有数据的入度不为 0，说明图中存在环。
+ */
+class Solution {
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        // 构建邻接表
+        List<List<Integer>> graph = new ArrayList<>();
+        for (int i = 0; i < numCourses; i++) {
+            graph.add(new ArrayList<>());
+        }
+        
+        // 记录每个节点的入度
+        int[] inDegree = new int[numCourses];
+        
+        // 构建图
+        for (int[] pre : prerequisites) {
+            int course = pre[0];
+            int prerequisite = pre[1];
+            graph.get(prerequisite).add(course);
+            inDegree[course]++;
+        }
+        
+        // 使用队列进行BFS
+        Queue<Integer> queue = new LinkedList<>();
+        
+        // 将所有入度为0的节点加入队列
+        for (int i = 0; i < numCourses; i++) {
+            if (inDegree[i] == 0) {
+                queue.offer(i);
+            }
+        }
+        
+        int count = 0; // 记录已处理的课程数量
+        
+        while (!queue.isEmpty()) {
+            int current = queue.poll();
+            count++;
+            
+            // 遍历当前节点的所有邻居
+            for (int neighbor : graph.get(current)) {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] == 0) {
+                    queue.offer(neighbor);
+                }
+            }
+        }
+        
+        return count == numCourses;
+    }
+}
+
+// 实现 Trie (前缀树)
+/*
+ * 创建一个TrieNode类，里面有isEnd和child两个成员变量
+ * 
+ */
+class Trie {
+    // 新建一个TrieNode类，为什么不直接用数组呢，是多了个isEnd，减少花销
+    class TrieNode{
+        private boolean isEnd;
+        // 注意这里声明的数组,一般不会在构造方法中调用自己的
+        TrieNode[] child;
+        TrieNode(){
+            isEnd = false;
+            // 一般是不会在在这里new自己，这里是new了一个数组，并不是new自己
+            // 可以参考这篇文章中间下面解释很好 https://bbs.csdn.net/topics/370163563
+            child = new TrieNode[26];
+        }
+    }
+
+    // 成员变量，根节点
+    TrieNode root;
+    /** Initialize your data structure here. */
+    public Trie() {
+        root = new TrieNode();
+    }
+
+    /** Inserts a word into the trie. */
+    public void insert(String word) {
+        // 注意各个方法的root应该是最原始的，不应该相互影响
+        TrieNode root = this.root;
+        for (char c : word.toCharArray()){
+            if (root.child[c-'a']==null){
+                root.child[c-'a'] = new TrieNode();
+            }
+            root = root.child[c-'a'];
+        }
+        root.isEnd = true;
+    }
+
+    /** Returns if the word is in the trie. */
+    public boolean search(String word) {
+        TrieNode root = this.root;
+        for (char c : word.toCharArray()){
+            if (root.child[c-'a']==null){
+                return false;
+            }
+            root = root.child[c-'a'];
+        }
+        return root.isEnd;
+    }
+
+    /** Returns if there is any word in the trie that starts with the given prefix. */
+    public boolean startsWith(String prefix) {
+        TrieNode root = this.root;
+        for (char c : prefix.toCharArray()){
+            if (root.child[c-'a']==null){
+                return false;
+            }
+            root = root.child[c-'a'];
+        }
+        return true;
+    }
+}
+
+// 全排列
+// DFS
+class Solution {
+    List<List<Integer>> mres = new LinkedList<>();
+    public List<List<Integer>> permute(int[] nums) {
+        LinkedList<Integer> temlist = new LinkedList<>();
+        trackback(nums, temlist);
+        return mres;
+    }
+
+    private void trackback(int[] nums, LinkedList<Integer> temlist) {
+        // return case
+        if (temlist.size() == nums.length){
+            mres.add(new LinkedList<>(temlist));
+            return;
+        }
+        for (int i = 0; i < nums.length; i++) {
+            if (temlist.contains(nums[i])) {
+                continue;
+            }
+            temlist.add(nums[i]);
+            trackback(nums, temlist);
+            temlist.removeLast();
+        }
+    }
+}
+
+// 子集
+// 输入：nums = [1,2,3]
+// 输出：[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]
+class Solution {
+    List<List<Integer>> res = new LinkedList<>();
+    public List<List<Integer>> subsets(int[] nums) {
+        LinkedList<Integer> marr = new LinkedList<>();
+        tracback(nums,0, marr);
+        return res;
+    }
+    //这里有问题还必须引入一个i,不然就全排列了，子集和全排列应该就这里的区别
+    public void tracback(int[] nums, int start, LinkedList<Integer> marr){
+        res.add(new LinkedList<>(marr));
+        for (int i=start; i<nums.length; i++){
+            marr.add(nums[i]);
+            tracback(nums, i+1, marr);
+            marr.removeLast();
+        }
+    }
+}
+
+// 电话号码的字母组合
+// 生成一个数组DFS,这个不用回溯
+class Solution {
+    String[] memo = {"0","0","abc","def","ghi","jkl","mno","pqrs","tuv","wxyz"};
+    List<String> mres = new LinkedList<>();
+    public List<String> letterCombinations(String digits) {
+        // dfs
+        if(digits.length()==0) return new LinkedList<>();
+        String s = new String();
+        dfs(digits, 0, s);
+        return mres;
+    }
+
+    private void dfs(String digits, int deep, String s) {
+        if (deep==digits.length()){
+            mres.add(s);
+            return;
+        }
+        String schar = memo[digits.charAt(deep)-'0'];
+        for (int i=0; i<schar.length(); i++){
+            dfs(digits, deep+1, s+schar.charAt(i));
+        }
+    }
+}
+
+// 组合总和
+// DFS+回溯
+class Solution {
+    List<List<Integer>> res = new ArrayList<>();
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        // 其实是一个子集问题，用子集的套路
+        LinkedList<Integer> marr = new LinkedList<>();
+        tracebace(candidates, target, marr, 0);
+        return res;
+
+    }
+
+    public void tracebace(int[] candidates, int target, LinkedList<Integer> marr, int sum){
+        // 不符合的情况
+        if (sum>target) return;
+        if (sum==target){
+            res.add(new LinkedList<>(marr));
+            return;
+        }
+        // 尝试添加下个数
+        for (int i=0; i<candidates.length; i++){
+            if (!marr.isEmpty()&&candidates[i]<marr.get(marr.size()-1)) continue;
+            marr.add(candidates[i]);
+            tracebace(candidates, target, marr, sum+candidates[i]);
+            marr.removeLast();
+        }
+    }
+}
+
+// 括号生成
+// 剪枝 + DFS + 尝试添加左右括号
+class Solution {
+    ArrayList<String> res = new ArrayList<>();
+    public List<String> generateParenthesis(int n) {
+        StringBuilder mstr = new StringBuilder();
+        tracebace(n, n, mstr);
+        return res;
+    }
+
+    public void tracebace(int left, int right, StringBuilder mstr){
+        // 不合法的跳过
+        if (left<0||right<0) return;
+        if (left>right) return;
+        if (left==0 && right==0){
+            res.add(new String(mstr));
+            return;
+        }
+
+        //尝试添加左括号
+        mstr.append('(');
+        tracebace(left-1, right, mstr);
+        mstr.deleteCharAt(mstr.length()-1);
+
+        //尝试添加右括号
+        mstr.append(')');
+        tracebace(left, right-1, mstr);
+        mstr.deleteCharAt(mstr.length()-1);
+    }
+}
+
+// 单词搜索
+// 遍历入口+dfs回溯
+class Solution {
+    int[][] memo;
+    public boolean exist(char[][] board, String word) {
+        // 回溯
+        memo = new int[board.length][board[0].length];
+        for (int i=0; i<board.length; i++){
+            for (int j=0; j<board[0].length; j++){
+                if (board[i][j]==word.charAt(0)){
+                    if (trackback(board, word, 0, i, j)){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    public boolean trackback(char[][] board, String word, int index, int x, int y){
+        // return case
+        if (x<0||x>=board.length||y<0||y>=board[0].length||board[x][y]!=word.charAt(index)||memo[x][y]==1){
+            return false;
+        }
+        if (index==word.length()-1){
+            return true;
+        }
+        memo[x][y] = 1;
+        
+        boolean mres =  trackback(board, word, index+1, x+1, y)||
+                trackback(board,word, index+1, x,y+1)||
+                trackback(board,word,index+1,x-1,y)||
+                trackback(board,word,index+1, x, y-1);
+        if (mres){
+            return true;
+        }else {
+            // 回溯注意这里啊，得恢复原来的状态
+            memo[x][y] = 0;
+        }
+        return false;
+    }
+}
+
+// 分割回文串
+// 动态规划+DFS
+
+// N皇后
+//还是需要注意中间加1减1的问题，但是需要自己过一遍吧，不能光debug
+class Solution {
+    private List<List<String>> msolution = new ArrayList<>();
+    public List<List<String>> solveNQueens(int n) {
+        //这里初始化不太好像，用二维数组的话，如何转成string或者用具体的forfor具体数组[][]赋值
+        char[][] mchar = new char[n][n];
+        for(char[] mchar1 : mchar){
+            Arrays.fill(mchar1,'.');
+            //注意这里，对于基本数据类型不能用增强for进行赋值
+//            for(char mmchar : mchar1){
+//                mmchar='.';
+//            }
+        }
+        backtrack(mchar,0);
+        return msolution;
+    }
+    public void backtrack(char[][] mchar, int row){
+        if(row==(mchar.length)){
+            msolution.add(toList(mchar));
+            return;
+        }
+        for(int col=0; col<mchar.length; col++){
+            if(isValid(mchar, row, col)){
+                mchar[row][col]='Q';
+                //这里应该用new string还是tostring，还有这个写的小list太啰嗦了吧
+                //更新 tostring是地址不行,
+                //mrowsolution.add(new String(mchar[row]));
+                backtrack(mchar,row+1);
+                //mrowsolution.remove(new String(mchar[row]));
+                mchar[row][col]='.';
+            };
+        }
+    }
+    public boolean isValid(char[][] mchar1, int row, int col){
+        //判断三个方向，左上，上，右上
+        //判断左上
+        //注意for循环中间是可以定义多个参数的
+        if(row == 0) return true;
+        for(int i=row, j=col; i>0&&j>0; i--,j--){
+            if(mchar1[i-1][j-1]=='Q') return false;
+        };
+        //判断右上
+        for(int i=row, j=col; i>0&&j<mchar1.length-1; i--,j++){
+            if(mchar1[i-1][j+1]=='Q') return false;
+        };
+        //判断正上
+        for(int i = row; i>0; i--){
+            if(mchar1[i-1][col]=='Q') return false;
+        };
+        return true;
+    };
+    //将二维数组转为List<String>
+    private List<String> toList(char[][] mchar){
+        List<String> mlist = new ArrayList<>();
+        for(char[] mmchar : mchar){
+            //使用append加入到mmchar
+            //StringBuilder msb = new StringBuilder();
+            //msb.append(mmchar);
+            mlist.add(new String(mmchar));
+        }
+        return mlist;
+    }
+
+}
+
+// 搜索插入位置
+// 二分搜素
+class Solution {
+    public int searchInsert(int[] nums, int target) {
+        int n = nums.length;
+        int left = 0, right = n - 1, ans = n;
+        while (left <= right) {
+            int mid = ((right - left) >> 1) + left;
+            if (target <= nums[mid]) {
+                ans = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return ans;
+    }
+}
+
+// 搜索二维矩阵
+// 一次二分搜索就行
+class Solution {
+    public boolean searchMatrix(int[][] matrix, int target) {
+        int m = matrix.length, n = matrix[0].length;
+        int low = 0, high = m * n - 1;
+        while (low <= high) {
+            int mid = (high - low) / 2 + low;
+            int x = matrix[mid / n][mid % n];
+            if (x < target) {
+                low = mid + 1;
+            } else if (x > target) {
+                high = mid - 1;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// 在排序数组中查找元素的第一个和最后一个位置
+// 两次二分搜索
+class Solution {
+    public static void main(String[] args) {
+        int[] arr ={0,0,0,1,2,3};
+        searchRange(arr, 0);
+    }
+    public static int[] searchRange(int[] nums, int target) {
+        if (nums.length==0) return new int[]{-1, -1};
+        // 二分查找
+        int left = 0;
+        int right = nums.length-1;
+        int mresleft = 0;
+        int mresright = 0;
+        while (left<=right){
+            int mid = left + (right-left)/2;
+            if (nums[mid]==target){
+                right = mid-1;
+            }else if (nums[mid]>target){
+                right = mid-1;
+            }else if (nums[mid]<target){
+                left = mid+1;
+            }
+        }
+        if (left>=nums.length||nums[left]!=target){
+            return new int[]{-1, -1};
+        }
+        mresleft = left;
+
+        left = 0;
+        right = nums.length-1;
+        while (left<=right){
+            int mid = left+(right-left)/2;
+            if (nums[mid]==target){
+                left = mid+1;
+            }else if (nums[mid]>target){
+                right = mid-1;
+            }else if (nums[mid]<target){
+                left = mid+1;
+            }
+        }
+        if (right<0||nums[right]!=target){
+            return new int[]{-1,-1};
+        }
+        mresright = right;
+        return new int[]{mresleft, mresright};
+    }
+}
+
+// 搜索旋转排序数组
+/*
+ * 判断是否有序，再选择搜索区间
+ * 
+ * 如果 [l, mid - 1] 是有序数组，且 target 的大小满足 [nums[l],nums[mid])，则我们应该将搜索范围缩小至 [l, mid - 1]，否则在 [mid + 1, r] 中寻找。
+如果 [mid, r] 是有序数组，且 target 的大小满足 [nums[mid+1],nums[r]]，则我们应该将搜索范围缩小至 [mid + 1, r]，否则在 [l, mid - 1] 中寻找。
+ */
+class Solution {
+    public int search(int[] nums, int target) {
+        int n = nums.length;
+        if (n == 0) {
+            return -1;
+        }
+        if (n == 1) {
+            return nums[0] == target ? 0 : -1;
+        }
+        int l = 0, r = n - 1;
+        while (l <= r) {
+            int mid = (l + r) / 2;
+            if (nums[mid] == target) {
+                return mid;
+            }
+            if (nums[0] <= nums[mid]) {
+                if (nums[0] <= target && target < nums[mid]) {
+                    r = mid - 1;
+                } else {
+                    l = mid + 1;
+                }
+            } else {
+                if (nums[mid] < target && target <= nums[n - 1]) {
+                    l = mid + 1;
+                } else {
+                    r = mid - 1;
+                }
+            }
+        }
+        return -1;
+    }
+}
+
+// 寻找两个正序数组的中位数 （hard）
+
+// 有效的括号
+// 栈存一下
+class Solution {
+    public boolean isValid(String s) {
+        int n = s.length();
+        Stack<Character> mque = new Stack<>();
+        for (int i=0; i<n; i++){
+            if (s.charAt(i)=='('||s.charAt(i)=='{'||s.charAt(i)=='['){
+                mque.push(s.charAt(i));
+            }else if (mque.isEmpty()){
+                return false;
+            } else {
+                if (s.charAt(i)==')'&&!mque.peek().equals('(')){
+                    return false;
+                }else if (s.charAt(i)=='}'&&!mque.peek().equals('{')){
+                    return false;
+                }else if (s.charAt(i)==']'&&!mque.peek().equals('[')){
+                    return false;
+                }else{
+                    mque.pop();
+                }
+            }
+        }
+        return mque.size() == 0;
+    }
+}
+
+// 最小栈
+// 使用辅助栈
+/*
+ *  push() 方法： 每当push()新值进来时，如果 小于等于 min_stack 栈顶值，则一起 push() 到 min_stack，即更新了栈顶最小值；
+    pop() 方法： 判断将 pop() 出去的元素值是否是 min_stack 栈顶元素值（即最小值），如果是则将 min_stack 栈顶元素一起 pop()，这样可以保证 min_stack 栈顶元素始终是 stack 中的最小值。
+    getMin()方法： 返回 min_stack 栈顶即可。
+ */
+class MinStack {
+    private Stack<Integer> stack;
+    private Stack<Integer> min_stack;
+    public MinStack() {
+        stack = new Stack<>();
+        min_stack = new Stack<>();
+    }
+    public void push(int x) {
+        stack.push(x);
+        if(min_stack.isEmpty() || x <= min_stack.peek())
+            min_stack.push(x);
+    }
+    public void pop() {
+        if(stack.pop().equals(min_stack.peek()))
+            min_stack.pop();
+    }
+    public int top() {
+        return stack.peek();
+    }
+    public int getMin() {
+        return min_stack.peek();
     }
 }
