@@ -2044,3 +2044,33 @@ class MinStack {
         return min_stack.peek();
     }
 }
+
+// 字符串解码
+
+
+// 每日温度
+// 直接遍历中间可以退出，有点类似动态规划
+class Solution {
+    public int[] dailyTemperatures(int[] temperatures) {
+        int len = temperatures.length;
+        int[] dp = new int[len];
+        dp[temperatures.length-1] = 0;
+        for (int i=temperatures.length-2; i>=0; i--){
+            int j=i+1;
+            while (j<temperatures.length){
+                if (temperatures[i]<temperatures[j]){
+                    dp[i] = j-i;
+                    break;
+                }else {
+                    // 退出优化
+                    if (dp[j]==0){
+                        dp[i]=0;
+                        break;
+                    }
+                    j += dp[j];
+                }
+            }
+        }
+        return dp;
+    }
+}
