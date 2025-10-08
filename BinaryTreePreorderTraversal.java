@@ -568,7 +568,179 @@ class Solution {
     }
 }
 
+// 路径总和 III
+// 前缀和 + 哈希表（优化解法）
+class Solution {
+    public int pathSum(TreeNode root, int targetSum) {
+        // 使用HashMap记录前缀和出现的次数
+        Map<Long, Integer> prefixSumCount = new HashMap<>();
+        // 初始化：前缀和为0的路径有1条（空路径）
+        prefixSumCount.put(0L, 1);
+        return dfs(root, 0L, targetSum, prefixSumCount);
+    }
+    
+    private int dfs(TreeNode node, long currentSum, int targetSum, Map<Long, Integer> prefixSumCount) {
+        if (node == null) {
+            return 0;
+        }
+        
+        // 计算当前路径和
+        currentSum += node.val;
+        
+        // 查找是否存在前缀和使得 currentSum - prefixSum = targetSum
+        // 即 prefixSum = currentSum - targetSum
+        int count = prefixSumCount.getOrDefault(currentSum - targetSum, 0);
+        
+        // 更新当前前缀和的出现次数
+        prefixSumCount.put(currentSum, prefixSumCount.getOrDefault(currentSum, 0) + 1);
+        
+        // 递归处理左右子树
+        count += dfs(node.left, currentSum, targetSum, prefixSumCount);
+        count += dfs(node.right, currentSum, targetSum, prefixSumCount);
+        
+        // 回溯，移除当前前缀和（因为要返回上一层）
+        prefixSumCount.put(currentSum, prefixSumCount.get(currentSum) - 1);
+        
+        return count;
+    }
+}
+
+// 二叉树的最近公共祖先
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        // 递归终止条件
+        if (root == null || root == p || root == q) {
+            return root;
+        }
+        
+        // 在左子树中查找
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        // 在右子树中查找
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        
+        // 如果左右子树都找到了，说明当前节点就是最近公共祖先
+        if (left != null && right != null) {
+            return root;
+        }
+        
+        // 如果只有一边找到了，返回找到的那边
+        return left != null ? left : right;
+    }
+}
+
+// 二叉树中的最大路径和
+// 递归实现
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode() {}
+ *     TreeNode(int val) { this.val = val; }
+ *     TreeNode(int val, TreeNode left, TreeNode right) {
+ *         this.val = val;
+ *         this.left = left;
+ *         this.right = right;
+ *     }
+ * }
+ */
+class Solution {
+    private int maxSum = Integer.MIN_VALUE;
+    
+    public int maxPathSum(TreeNode root) {
+        maxGain(root);
+        return maxSum;
+    }
+    
+    private int maxGain(TreeNode node) {
+        if (node == null) {
+            return 0;
+        }
+        
+        // 递归计算左右子树的最大贡献值
+        // 如果贡献值为负，则不计入（取0）
+        int leftGain = Math.max(maxGain(node.left), 0);
+        int rightGain = Math.max(maxGain(node.right), 0);
+        
+        // 计算当前节点的路径和（可以包含左右子树）
+        int priceNewPath = node.val + leftGain + rightGain;
+        
+        // 更新全局最大路径和
+        maxSum = Math.max(maxSum, priceNewPath);
+        
+        // 返回当前节点的最大贡献值（只能选择一条路径）
+        return node.val + Math.max(leftGain, rightGain);
+    }
+}
+
+
 ///////////////////////////////
+// 相交链表
+// 遍历完，换对方
+public class Solution {
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null) {
+            return null;
+        }
+        ListNode pA = headA, pB = headB;
+        while (pA != pB) {
+            pA = pA == null ? headB : pA.next;
+            pB = pB == null ? headA : pB.next;
+        }
+        return pA;
+    }
+}
+
+// 反转链表
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        ListNode cur = head, pre = null;
+        while(cur != null) {
+            ListNode tmp = cur.next; // 暂存后继节点 cur.next
+            cur.next = pre;          // 修改 next 引用指向
+            pre = cur;               // pre 暂存 cur
+            cur = tmp;               // cur 访问下一节点
+        }
+        return pre;
+    }
+}
+
+// 回文链表
+class Solution {
+    public boolean isPalindrome(ListNode head) {
+        List<Integer> vals = new ArrayList<Integer>();
+
+        // 将链表的值复制到数组中
+        ListNode currentNode = head;
+        while (currentNode != null) {
+            vals.add(currentNode.val);
+            currentNode = currentNode.next;
+        }
+
+        // 使用双指针判断是否回文
+        int front = 0;
+        int back = vals.size() - 1;
+        while (front < back) {
+            if (!vals.get(front).equals(vals.get(back))) {
+                return false;
+            }
+            front++;
+            back--;
+        }
+        return true;
+    }
+}
+
 // 环形链表
 /*
  * 快慢指针
@@ -725,6 +897,76 @@ class Solution {
     }
 }
 
+// 两两交换链表中的节点
+// 迭代
+class Solution {
+    public ListNode swapPairs(ListNode head) {
+        if (head == null || head.next == null) {
+            return head;
+        }
+        
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode current = dummy;
+        
+        while (current.next != null && current.next.next != null) {
+            ListNode node1 = current.next;
+            ListNode node2 = current.next.next;
+            
+            // 交换节点
+            node1.next = node2.next;
+            node2.next = node1;
+            current.next = node2;
+            
+            // 移动到下一对的前一个位置
+            current = node1;
+        }
+        
+        return dummy.next;
+    }
+}
+
+//  K 个一组翻转链表
+class SolutionKGroup {
+    public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode prev = dummy;
+        
+        while (prev.next != null) {
+            // 检查剩余节点是否足够k个
+            ListNode end = prev;
+            for (int i = 0; i < k && end != null; i++) {
+                end = end.next;
+            }
+            if (end == null) break;
+            
+            // 反转k个节点
+            ListNode start = prev.next;
+            ListNode nextGroup = end.next;
+            end.next = null;
+            prev.next = reverse(start);
+            start.next = nextGroup;
+            
+            prev = start;
+        }
+        
+        return dummy.next;
+    }
+    
+    private ListNode reverse(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+}
+
 // 复制带随机指针的链表
 // 1、使用HashMap 2、先next存一半，再走一遍指向之前存的
 class Solution {
@@ -808,6 +1050,7 @@ class Solution {
     }
 }
 
+///////////////////////////////
 // 两数之和
 // HashMap
 class Solution {
@@ -824,7 +1067,7 @@ class Solution {
     }
 }
 
-// 
+// 字母异位词分组
 // string排序后用Hash存下
 class Solution {
     public List<List<String>> groupAnagrams(String[] strs) {
@@ -1281,7 +1524,7 @@ class Solution {
     }
 }
 
-// 旋转数组
+// 轮转数组
 /*
  * 翻转三次数组
  *  原始数组	1 2 3 4 5 6 7
@@ -1492,6 +1735,108 @@ class Solution {
     }
 }
 
+////////////////////////
+// 岛屿数量
+// DFS
+class Solution {
+    public int numIslands(char[][] grid) {
+        int mres = 0;
+        for (int row=0; row<grid.length; row++){
+            for (int loc=0; loc<grid[0].length; loc++){
+                if (grid[row][loc]=='1'){
+                    mres++;
+                    // dfs去着色
+                    dfs(grid, row, loc);
+                }
+            }
+        }
+        return mres;
+    }
+
+    private void dfs(char[][] grid, int row, int loc) {
+        if (row<0||row>=grid.length||loc<0||loc>=grid[0].length){
+            return;
+        }
+        if (grid[row][loc]=='0'){
+            return;
+        }
+        grid[row][loc] = '0';
+        dfs(grid, row-1,loc);
+        dfs(grid,row+1, loc);
+        dfs(grid,row,loc-1);
+        dfs(grid,row,loc+1);
+    }
+}
+
+// 腐烂的橘子
+/*
+ * 
+ *  初始化队列，记录腐烂橘子的位置。
+
+    初始化分钟数=0，新鲜橘子计数=0。
+
+    遍历网格，统计新鲜橘子数量，并将腐烂橘子加入队列。
+
+    如果新鲜橘子数量为0，直接返回0。
+
+    开始BFS：
+    当队列不为空且还有新鲜橘子时，进行扩散。
+    记录当前队列的大小（即当前分钟的腐烂橘子数），然后逐个处理。
+    对于每个腐烂橘子，检查其上下左右四个方向，如果有新鲜橘子，则将其腐烂，并加入队列，同时新鲜橘子数量减1。
+    当前分钟的所有腐烂橘子处理完后，分钟数加1。
+
+    最后，检查新鲜橘子数量，如果为0，返回分钟数；否则返回-1。
+ */
+class Solution {
+    public int orangesRotting(int[][] grid) {
+        int m = grid.length, n = grid[0].length;
+        Queue<int[]> queue = new LinkedList<>();
+        int freshOranges = 0;
+        
+        // 初始化：统计新鲜橘子，腐烂橘子入队
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == 1) {
+                    freshOranges++;
+                } else if (grid[i][j] == 2) {
+                    queue.offer(new int[]{i, j});
+                }
+            }
+        }
+        
+        // 如果没有新鲜橘子，直接返回0
+        if (freshOranges == 0) return 0;
+        
+        int minutes = 0;
+        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        
+        // BFS遍历
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            boolean infected = false;
+            
+            for (int i = 0; i < size; i++) {
+                int[] cell = queue.poll();
+                
+                for (int[] dir : directions) {
+                    int x = cell[0] + dir[0];
+                    int y = cell[1] + dir[1];
+                    
+                    if (x >= 0 && x < m && y >= 0 && y < n && grid[x][y] == 1) {
+                        grid[x][y] = 2;
+                        freshOranges--;
+                        queue.offer(new int[]{x, y});
+                        infected = true;
+                    }
+                }
+            }
+            
+            if (infected) minutes++;
+        }
+        
+        return freshOranges == 0 ? minutes : -1;
+    }
+}
 
 // 课程表
 /*
@@ -1788,7 +2133,54 @@ class Solution {
 }
 
 // 分割回文串
-// 动态规划+DFS
+// DFS+判断回文
+class Solution {
+    public List<List<String>> partition(String s) {
+        List<List<String>> result = new ArrayList<>();
+        if (s == null || s.length() == 0) return result;
+        
+        // 记忆化：存储已经计算过的回文判断
+        Boolean[][] memo = new Boolean[s.length()][s.length()];
+        backtrackWithMemo(s, 0, new ArrayList<>(), result, memo);
+        
+        return result;
+    }
+    
+    private void backtrackWithMemo(String s, int start, List<String> path,
+                                  List<List<String>> result, Boolean[][] memo) {
+        if (start == s.length()) {
+            result.add(new ArrayList<>(path));
+            return;
+        }
+        
+        for (int end = start; end < s.length(); end++) {
+            if (isPalindromeWithMemo(s, start, end, memo)) {
+                path.add(s.substring(start, end + 1));
+                backtrackWithMemo(s, end + 1, path, result, memo);
+                path.remove(path.size() - 1);
+            }
+        }
+    }
+    
+    private boolean isPalindromeWithMemo(String s, int left, int right, Boolean[][] memo) {
+        if (memo[left][right] != null) {
+            return memo[left][right];
+        }
+        
+        int l = left, r = right;
+        while (l < r) {
+            if (s.charAt(l) != s.charAt(r)) {
+                memo[left][right] = false;
+                return false;
+            }
+            l++;
+            r--;
+        }
+        
+        memo[left][right] = true;
+        return true;
+    }
+}
 
 // N皇后
 //还是需要注意中间加1减1的问题，但是需要自己过一遍吧，不能光debug
@@ -2153,3 +2545,95 @@ class Solution {
     }
 }
 
+// 数据流的中位数（hard）
+
+// 买卖股票的最佳时机
+// 记 从左往右，更新最小和最大利润
+public class Solution {
+    public int maxProfit(int prices[]) {
+        int minprice = Integer.MAX_VALUE;
+        int maxprofit = 0;
+        for (int i = 0; i < prices.length; i++) {
+            if (prices[i] < minprice) {
+                minprice = prices[i];
+            } else if (prices[i] - minprice > maxprofit) {
+                maxprofit = prices[i] - minprice;
+            }
+        }
+        return maxprofit;
+    }
+}
+
+// 跳跃游戏
+/*
+    动态规划算法：
+        定义子问题：dp[i]表示前i个节点的能跳跃到的最大距离;
+    更新公式：
+        dp[i] = max{ dp[i - 1] , i + nums[i] }
+        max{ 前i - 1个节点的最大距离, 当前节点能跳到的距离 }
+    初始化：
+        dp[0] = nums[0];
+        从下表1的节点开始执行：
+    执行过程：
+        1.进入第i个节点前:dp[i - 1] >= i ?
+            判断当前节点是否可达：根据能否从前i - 1个节点跳跃过来
+        2.根据公式更新dp[i]
+        返回：
+            dp[len - 1] >= len - 1;
+
+    然后很显然，dp[i]只和dp[i-1]有关, 所以可以优化空间，只需要一个变量rightMax就行
+*/
+class Solution {
+    public boolean canJump(int[] nums) {
+        int len = nums.size();
+        vector<int> dp(len);
+        dp[0] = nums[0];
+        for (int i = 1; i < nums.size(); i++) {
+            if (i > dp[i -1]) {
+                return false; // 这里中间退出
+            }
+            dp[i] = max(dp[i - 1], i + nums[i]);
+        }
+        return dp[len - 1] >= len - 1;
+
+    }
+}
+
+
+// 跳跃游戏II
+// 贪心，end maxPosition steps
+public int jump(int[] nums) {
+    int end = 0;
+    int maxPosition = 0; 
+    int steps = 0;
+    for(int i = 0; i < nums.length - 1; i++){
+        //找能跳的最远的
+        maxPosition = Math.max(maxPosition, nums[i] + i); 
+        if( i == end){ //遇到边界，就更新边界，并且步数加一
+            end = maxPosition;
+            steps++;
+        }
+    }
+    return steps;
+}
+
+// 划分字母区间（没有）
+
+// 爬楼梯
+// 动态规划，当前是 n-1 + n-2
+class Solution {
+    public int climbStairs(int n) {
+        
+        if (n==0) return 0;
+        if (n==1) return 1;
+        if (n==2) return 2;
+        int[] mres = new int[n];
+        //base case
+        mres[0] = 1;
+        mres[1] = 2;
+        for (int i=2; i<n; i++){
+            mres[i] = mres[i-1]+mres[i-2];
+        }
+        return mres[n-1];
+    }
+}
