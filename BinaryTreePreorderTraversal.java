@@ -2637,3 +2637,173 @@ class Solution {
         return mres[n-1];
     }
 }
+// 杨辉三角
+/*
+ * 这样看
+ * 
+    [1]
+    [1,1]
+    [1,2,1]
+    [1,3,3,1]
+    [1,4,6,4,1]
+    [1,5,10,10,5,1]
+ */
+class Solution {
+    public List<List<Integer>> generate(int numRows) {
+        List<List<Integer>> res = new ArrayList<>();
+        for (int i=0; i<numRows; i++){
+            ArrayList<Integer> list = new ArrayList<>();
+            // 注意这里
+            for (int j=0; j<=i; j++){
+                if (j==0 || j==i){
+                    list.add(1);
+                }else{
+                    list.add(res.get(i-1).get(j-1)+res.get(i-1).get(j));
+                }
+            }
+            res.add(list);
+        }
+        return res;
+    }
+}
+
+// 杨辉三角
+class Solution {
+    public int rob(int[] nums) {
+        if (nums.length == 0) {
+            return 0;
+        }
+        if (nums.length == 1) {
+            return nums[0];
+        }
+        int dp[] = new int[nums.length];
+        Arrays.fill(dp, 0);
+        dp[0] = nums[0];
+        dp[1] = Math.max(nums[0], nums[1]);
+        for (int i=2; i<nums.length; i++) {
+            dp[i] = Math.max(dp[i-1], dp[i-2]+nums[i]);
+        }
+        return dp[nums.length-1];
+    }
+}
+
+// 完全平方数
+// @b 类似凑硬币，但是凑的是i^2
+class Solution {
+    public int numSquares(int n) {
+        var f = new int[n + 1];
+        Arrays.fill(f, 10001);
+        f[0] = 0;
+        for (int i = 1; i * i <= n; i++) {
+            for (int j = i * i; j <= n; j++) {
+                f[j] = Math.min(f[j], f[j - i * i] + 1);
+            }
+        }
+        return f[n];
+    }
+}
+
+// dp+至低向上
+class Solution {
+    public int coinChange(int[] coins, int amount) {
+        // 自底向上的动态规划
+        if (coins.length == 0) {
+            return -1;
+        }
+
+        // dp[n]的值： 表示的凑成总金额为n所需的最少的硬币个数
+        int[] dp = new int[amount + 1];
+        // 给dp赋初值，最多的硬币数就是全部使用面值1的硬币进行换
+        // amount + 1 是不可能达到的换取数量，于是使用其进行填充
+        Arrays.fill(dp, amount + 1);
+        dp[0] = 0;
+        for (int i = 1; i <= amount; i++) {
+            for (int j = 0; j < coins.length; j++) {
+                if (i - coins[j] >= 0) {
+                    // dp[i]有两种实现的方式，
+                    // 一种是包含当前的coins[i],那么剩余钱就是 i-coins[i],这种操作要兑换的硬币数是 dp[i-coins[j]] + 1
+                    // 另一种就是不包含，要兑换的硬币数是dp[i]
+                    dp[i] = Math.min(dp[i], dp[i - coins[j]] + 1);
+                }
+            }
+        }
+
+        return dp[amount] == (amount + 1) ? -1 : dp[amount];
+    }
+}
+
+// 单词拆分
+// dp 又有点类似于前缀和
+// dp 当前为true，并且剩余包含在wordDict中，那么dp[i] = true
+// 每个都for
+public class Solution {
+    public boolean wordBreak(String s, List<String> wordDict) {
+        Set<String> wordDictSet = new HashSet(wordDict);
+        boolean[] dp = new boolean[s.length() + 1];
+        dp[0] = true;
+        for (int i = 1; i <= s.length(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (dp[j] && wordDictSet.contains(s.substring(j, i))) {
+                    dp[i] = true;
+                    break;
+                }
+            }
+        }
+        return dp[s.length()];
+    }
+}
+
+// 最长递增子序列
+// for 所有
+class Solution {
+    public int lengthOfLIS(int[] nums) {
+        int[] dp = new int[nums.length];
+        int max = 0;
+        Arrays.fill(dp,1);
+        for(int i=0; i<nums.length; i++){
+            for(int j=0; j<i; j++){
+                if (nums[i]>nums[j]){
+                    if(dp[i]<dp[j]+1){
+                        dp[i]=dp[j]+1;
+                    }
+                }
+            }
+            if(max<dp[i])
+                max=dp[i];
+        }
+       return max;
+    }
+}
+
+// 乘积最大子数组
+/*
+ * 这题是求数组中子区间的最大乘积，对于乘法，我们需要注意，
+ * 负数乘以负数，会变成正数，所以解这题的时候我们需要维护两个变量，
+ * 当前的最大值，以及最小值，最小值可能为负数，但没准下一步乘以一个负数，
+ * 当前的最大值就变成最小值，而最小值则变成最大值了。
+ */
+class Solution {
+    public int maxProduct(int[] nums) {
+        if (nums == null || nums.length == 0) return 0;
+        
+        int n = nums.length;
+        int[] maxDP = new int[n]; // 以i结尾的最大乘积子数组
+        int[] minDP = new int[n]; // 以i结尾的最小乘积子数组
+        
+        maxDP[0] = nums[0];
+        minDP[0] = nums[0];
+        int result = nums[0];
+        
+        for (int i = 1; i < n; i++) {
+            // 三种可能：当前数本身、当前数乘以前面的最大值、当前数乘以前面的最小值
+            maxDP[i] = Math.max(nums[i], 
+                               Math.max(maxDP[i - 1] * nums[i], minDP[i - 1] * nums[i]));
+            minDP[i] = Math.min(nums[i], 
+                               Math.min(maxDP[i - 1] * nums[i], minDP[i - 1] * nums[i]));
+            
+            result = Math.max(result, maxDP[i]);
+        }
+        
+        return result;
+    }
+}
