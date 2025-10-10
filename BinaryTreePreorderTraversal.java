@@ -391,6 +391,22 @@ class Solution {
         return Math.max(L, R) + 1; // 返回该节点为根的子树的深度
     }
 }
+// 上面这个赋值1是表示node数，直接赋0表示边数也可以
+class Solution {
+    int res = 0;
+    public int diameterOfBinaryTree(TreeNode root) {
+        help(root);
+        return res;
+    }
+    public int help(TreeNode root) {
+        if(root == null) return 0;
+        int len_l = help(root.left);
+        int len_r = help(root.right);
+        res = Math.max(res, len_l+len_r);
+        return Math.max(len_l, len_r) + 1 ;
+    }
+
+}
 
 // 将有序数组转换为二叉搜索树
 // 中序遍历，每次都选mid
@@ -2855,4 +2871,29 @@ Ones and Zeroes（一和零）
 Coin Change（零钱兑换）
 Coin Change 2（零钱兑换 II）
 Perfect Squares（完全平方数）
+
+0-1 背包问题
+    特点：每种物品只有一件，要么选，要么不选。
+    状态转移方程：
+    dp[j] = max(dp[j], dp[j - weight[i]] + value[i])
+    关键点：内层循环遍历容量时，需要从大到小遍历，防止物品被重复使用。
+
+完全背包问题
+    特点：每种物品有无限件。
+    状态转移方程：
+    dp[j] = max(dp[j], dp[j - weight[i]] + value[i])
+    关键点：内层循环遍历容量时，需要从小到大遍历，允许物品被重复使用。
+
+遍历顺序（核心）：
+    0-1背包：物品正序，容量倒序（防止重复使用）。
+
+完全背包：
+    物品正序，容量正序（允许重复使用）。
+    求组合数：先遍历物品，再遍历容量。
+    求排列数：先遍历容量，再遍历物品。
+
+完全背包：
+注意：为什么先遍历物品，再遍历容量是求组合数？
+    因为这种顺序保证了在考虑一种新的硬币面额时，我们是在之前所有硬币组合的基础上添加这种新硬币，
+    不会产生 (1,2) 和 (2,1) 这种顺序不同的重复情况。
  */
