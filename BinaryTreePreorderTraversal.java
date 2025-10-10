@@ -2877,12 +2877,24 @@ Perfect Squares（完全平方数）
     状态转移方程：
     dp[j] = max(dp[j], dp[j - weight[i]] + value[i])
     关键点：内层循环遍历容量时，需要从大到小遍历，防止物品被重复使用。
+    for (int i = 0; i < n; i++) {
+        // 必须从后往前遍历，避免重复选择同一物品
+        for (int j = capacity; j >= weights[i]; j--) {
+            dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]);
+        }
+    }
 
 完全背包问题
     特点：每种物品有无限件。
     状态转移方程：
     dp[j] = max(dp[j], dp[j - weight[i]] + value[i])
     关键点：内层循环遍历容量时，需要从小到大遍历，允许物品被重复使用。
+    for (int i = 0; i < n; i++) {
+        // 必须从前往后遍历，允许重复选择同一物品
+        for (int j = weights[i]; j <= capacity; j++) {
+            dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]);
+        }
+    }
 
 遍历顺序（核心）：
     0-1背包：物品正序，容量倒序（防止重复使用）。
@@ -2897,3 +2909,471 @@ Perfect Squares（完全平方数）
     因为这种顺序保证了在考虑一种新的硬币面额时，我们是在之前所有硬币组合的基础上添加这种新硬币，
     不会产生 (1,2) 和 (2,1) 这种顺序不同的重复情况。
  */
+public class Knapsack01 {
+    
+    /**
+     * 0-1背包问题 - 二维DP数组解法
+     * @param capacity 背包容量
+     * @param weights 物品重量数组
+     * @param values 物品价值数组
+     * @return 最大价值
+     */
+    public static int knapsack2D(int capacity, int[] weights, int[] values) {
+        int n = weights.length;
+        // dp[i][j] 表示前i个物品，背包容量为j时的最大价值
+        int[][] dp = new int[n + 1][capacity + 1];
+        
+        for (int i = 1; i <= n; i++) {
+            for (int j = 1; j <= capacity; j++) {
+                if (j < weights[i - 1]) {
+                    // 当前物品重量大于背包容量，不能放入
+                    dp[i][j] = dp[i - 1][j];
+                } else {
+                    // 选择：不放当前物品 或 放当前物品
+                    dp[i][j] = Math.max(
+                        dp[i - 1][j], 
+                        dp[i - 1][j - weights[i - 1]] + values[i - 1]
+                    );
+                }
+            }
+        }
+        return dp[n][capacity];
+    }
+    
+    /**
+     * 0-1背包问题 - 一维DP数组优化
+     * 空间复杂度从O(n*capacity)优化到O(capacity)
+     */
+    public static int knapsack1D(int capacity, int[] weights, int[] values) {
+        int n = weights.length;
+        // dp[j] 表示背包容量为j时的最大价值
+        int[] dp = new int[capacity + 1];
+        
+        for (int i = 0; i < n; i++) {
+            // 必须从后往前遍历，避免重复选择同一物品
+            for (int j = capacity; j >= weights[i]; j--) {
+                dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]);
+            }
+        }
+        return dp[capacity];
+    }
+    
+    public static void main(String[] args) {
+        int capacity = 10;
+        int[] weights = {2, 3, 4, 5};
+        int[] values = {3, 4, 5, 6};
+        
+        System.out.println("二维DP解法: " + knapsack2D(capacity, weights, values));
+        System.out.println("一维DP解法: " + knapsack1D(capacity, weights, values));
+    }
+}
+
+public class CompleteKnapsack {
+    
+    /**
+     * 完全背包问题 - 二维DP数组解法
+     */
+    public static int completeKnapsack2D(int capacity, int[] weights, int[] values) {
+        int n = weights.length;
+        int[][] dp = new int[n + 1][capacity + 1];
+        
+        for (int i = 1; i <= n; i++) {
+            for (int j = 1; j <= capacity; j++) {
+                // 最多能放 k 个当前物品
+                int maxK = j / weights[i - 1];
+                for (int k = 0; k <= maxK; k++) {
+                    dp[i][j] = Math.max(
+                        dp[i][j],
+                        dp[i - 1][j - k * weights[i - 1]] + k * values[i - 1]
+                    );
+                }
+            }
+        }
+        return dp[n][capacity];
+    }
+    
+    /**
+     * 完全背包问题 - 一维DP数组优化
+     */
+    public static int completeKnapsack1D(int capacity, int[] weights, int[] values) {
+        int n = weights.length;
+        int[] dp = new int[capacity + 1];
+        
+        for (int i = 0; i < n; i++) {
+            // 必须从前往后遍历，允许重复选择同一物品
+            for (int j = weights[i]; j <= capacity; j++) {
+                dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]);
+            }
+        }
+        return dp[capacity];
+    }
+    
+    public static void main(String[] args) {
+        int capacity = 10;
+        int[] weights = {2, 3, 4, 5};
+        int[] values = {3, 4, 5, 6};
+        
+        System.out.println("完全背包二维DP: " + completeKnapsack2D(capacity, weights, values));
+        System.out.println("完全背包一维DP: " + completeKnapsack1D(capacity, weights, values));
+    }
+}
+
+// 不同路径
+/*
+ * 方法：动态规划
+    我们使用一个二维数组 dp，其中 dp[i][j] 表示从起点 (0,0) 到达 (i,j) 的不同路径数目。
+    状态转移方程：由于机器人只能向右或向下移动，所以到达 (i,j) 的路径数等于从左边 (i-1,j) 和上边 (i,j-1) 的路径数之和。
+    即：dp[i][j] = dp[i-1][j] + dp[i][j-1]
+
+    初始化：对于第一行和第一列，由于只能一直向右或向下，所以只有一条路径，即 dp[0][j] = 1, dp[i][0] = 1。
+ * 
+ */
+class Solution {
+    public int uniquePaths(int m, int n) {
+        // dp[i][j] 表示到达(i,j)位置的不同路径数
+        int[][] dp = new int[m][n];
+        
+        // 初始化第一行和第一列
+        for (int i = 0; i < m; i++) {
+            dp[i][0] = 1;
+        }
+        for (int j = 0; j < n; j++) {
+            dp[0][j] = 1;
+        }
+        
+        // 填充dp数组
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                dp[i][j] = dp[i-1][j] + dp[i][j-1];
+            }
+        }
+        
+        return dp[m-1][n-1];
+    }
+}
+
+// 最小路径和
+/*
+ * 动态规划，和上面类似，但是初始条件不一样
+ */
+class Solution {
+    public int minPathSum(int[][] grid) {
+        if (grid == null || grid.length == 0 || grid[0].length == 0) {
+            return 0;
+        }
+        
+        int m = grid.length;
+        int n = grid[0].length;
+        
+        // dp[i][j] 表示从(0,0)到(i,j)的最小路径和
+        int[][] dp = new int[m][n];
+        
+        // 初始化起点
+        dp[0][0] = grid[0][0];
+        
+        // 初始化第一列（只能从上边来）
+        for (int i = 1; i < m; i++) {
+            dp[i][0] = dp[i-1][0] + grid[i][0];
+        }
+        
+        // 初始化第一行（只能从左边来）
+        for (int j = 1; j < n; j++) {
+            dp[0][j] = dp[0][j-1] + grid[0][j];
+        }
+        
+        // 填充dp数组
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                dp[i][j] = Math.min(dp[i-1][j], dp[i][j-1]) + grid[i][j];
+            }
+        }
+        
+        return dp[m-1][n-1];
+    }
+}
+
+// 最长回文子串
+/*
+ *  回文串围绕中心对称。
+    中心可以是一个字符（奇数长度）或两个字符之间（偶数长度）。
+    枚举每个中心，然后向两边扩展，找到以这个中心为轴的最长回文。
+
+    注意：start = i - (len - 1) / 2;
+        return right - left - 1;
+ */
+public class LongestPalindrome {
+    public static String longestPalindrome(String s) {
+        if (s == null || s.length() < 2) {
+            return s;
+        }
+
+        int start = 0, maxLen = 1;
+
+        for (int i = 0; i < s.length(); i++) {
+            // 奇数长度回文
+            int len1 = expandFromCenter(s, i, i);
+            // 偶数长度回文
+            int len2 = expandFromCenter(s, i, i + 1);
+            int len = Math.max(len1, len2);
+
+            if (len > maxLen) {
+                maxLen = len;
+                start = i - (len - 1) / 2;
+            }
+        }
+
+        return s.substring(start, start + maxLen);
+    }
+
+    // 向两边扩展，返回回文长度
+    private static int expandFromCenter(String s, int left, int right) {
+        while (left >= 0 && right < s.length() && s.charAt(left) == s.charAt(right)) {
+            left--;
+            right++;
+        }
+        return right - left - 1;
+    }
+
+    // 测试
+    public static void main(String[] args) {
+        System.out.println(longestPalindrome("babad")); // 输出 "bab" 或 "aba"
+        System.out.println(longestPalindrome("cbbd"));  // 输出 "bb"
+        System.out.println(longestPalindrome("a"));     // 输出 "a"
+        System.out.println(longestPalindrome("ac"));    // 输出 "a" 或 "c"
+    }
+}
+
+// 最长公共子序列
+public class LongestCommonSubsequence {
+
+    /**
+     * 计算两个字符串的最长公共子序列长度
+     * @param text1 第一个字符串
+     * @param text2 第二个字符串
+     * @return 最长公共子序列长度
+     */
+    public static int longestCommonSubsequence(String text1, String text2) {
+        int m = text1.length();  // text1 长度
+        int n = text2.length();  // text2 长度
+
+        // 创建 DP 表，dp[i][j] 表示：
+        // text1 前 i 个字符 与 text2 前 j 个字符 的最长公共子序列长度
+        int[][] dp = new int[m + 1][n + 1];
+
+        // 从 1 开始遍历，因为 dp[0][*] 和 dp[*][0] 表示空串，对应的 LCS 长度为 0
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                // 如果当前字符相等，则 LCS 长度 = 上一个状态的长度 + 1
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    // 如果字符不相等，LCS 长度 = 两种可能的最大值：
+                    // ① 舍弃 text1 当前字符的 LCS
+                    // ② 舍弃 text2 当前字符的 LCS
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+
+        // dp[m][n] 即为整个字符串的 LCS 长度
+        return dp[m][n];
+    }
+
+    public static void main(String[] args) {
+        System.out.println(longestCommonSubsequence("abcde", "ace"));  // 输出 3 ("ace")
+        System.out.println(longestCommonSubsequence("abc", "abc"));    // 输出 3 ("abc")
+        System.out.println(longestCommonSubsequence("abc", "def"));    // 输出 0 (没有公共子序列)
+    }
+}
+
+// 编辑距离
+// 这个中间记住吧，增删改没啥好说的确实不太好明确的解释
+class Solution {
+    public int minDistance(String word1, String word2) {
+        int m = word1.length();
+        int n = word2.length();
+        
+        // dp[i][j] 表示将 word1 的前 i 个字符转换为 word2 的前 j 个字符所需的最少操作次数
+        int[][] dp = new int[m+1][n+1];
+        
+        // 初始化
+        for (int i = 0; i <= m; i++) {
+            dp[i][0] = i; // 删除 i 个字符
+        }
+        for (int j = 0; j <= n; j++) {
+            dp[0][j] = j; // 插入 j 个字符
+        }
+        
+        // 动态规划填充dp数组
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (word1.charAt(i-1) == word2.charAt(j-1)) {
+                    dp[i][j] = dp[i-1][j-1];
+                } else {
+                    dp[i][j] = Math.min(
+                        Math.min(
+                            dp[i-1][j] + 1,
+                            dp[i][j-1] + 1), 
+                            dp[i-1][j-1] + 1);
+                }
+            }
+        }
+        
+        return dp[m][n];
+    }
+}
+
+
+// 只出现一次的数字
+// 异或运算，没啥可讲的，记住吧
+class Solution {
+    /*
+     考异或运算
+     任何数和 00 做异或运算，结果仍然是原来的数，即 a \oplus 0=aa⊕0=a。
+     任何数和其自身做异或运算，结果是 00，即 a \oplus a=0a⊕a=0。
+     异或运算满足交换律和结合律
+     */
+    public int singleNumber(int[] nums) {
+        int mres = 0;
+        for (int i=0; i<nums.length; i++){
+            mres ^= nums[i];
+        }
+        return mres;
+    }
+}
+
+// 多数元素
+// HashMap 统计，什么摩尔投票法太麻烦了
+class Solution {
+    public int majorityElement(int[] nums) {
+        // 使用哈希表统计每个数字的出现次数
+        Map<Integer, Integer> countMap = new HashMap<>();
+        
+        for (int num : nums) {
+            countMap.put(num, countMap.getOrDefault(num, 0) + 1);
+            // 如果某个数字的出现次数超过 n/2，立即返回
+            if (countMap.get(num) > nums.length / 2) {
+                return num;
+            }
+        }
+        
+        return -1; // 根据题目假设，这里不会执行
+    }
+}
+
+// 颜色分类
+// 三指针，一个就三个元素，一个从前往后排，一个从后往前排就可以了
+class Solution {
+    public void sortColors(int[] nums) {
+        // 三指针法：p0指向0的右边界，p2指向2的左边界，curr当前指针
+        int p0 = 0;           // 指向下一个0应该放置的位置
+        int curr = 0;          // 当前遍历的指针
+        int p2 = nums.length - 1; // 指向下一个2应该放置的位置
+        
+        while (curr <= p2) {
+            if (nums[curr] == 0) {
+                // 遇到0，交换到前面
+                swap(nums, curr, p0);
+                p0++;
+                curr++;
+            } else if (nums[curr] == 2) {
+                // 遇到2，交换到后面
+                swap(nums, curr, p2);
+                p2--;
+                // 注意：这里curr不增加，因为从后面交换过来的元素还需要检查
+            } else {
+                // 遇到1，直接跳过
+                curr++;
+            }
+        }
+    }
+    
+    private void swap(int[] nums, int i, int j) {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+}
+
+// 下一个排列
+/*
+ * 思路：
+    从后向前查找第一个相邻元素对 (i, i+1)，满足 nums[i] < nums[i+1]。这样，nums[i] 就是需要被替换的数字。
+    如果找不到这样的相邻元素对，说明整个数组是降序排列的，也就是最大的排列，那么将其反转得到最小排列（升序）。
+    如果找到了这样的 i，然后从后向前查找第一个大于 nums[i] 的元素 nums[j]。
+    交换 nums[i] 和 nums[j]。
+    将位置 i+1 到末尾的元素反转（因为原来 i+1 到末尾是降序的，反转后变为升序，这样才是最小的下一个排列）。
+
+举例：
+    假设 nums = [1,2,3,8,5,7,6,4]
+步骤：
+    从后往前找，找到第一个 nums[i] < nums[i+1] 的位置，即 5<7，此时 i=4（值为5）。
+    然后从后往前找第一个大于5的数，即6（位置6）。
+    交换5和6，得到 [1,2,3,8,6,7,5,4]
+    然后将位置5到末尾（即7,5,4）反转，得到 [1,2,3,8,6,4,5,7]
+    注意：反转是因为我们想要下一个排列，而且我们知道从 i+1 到末尾是降序的，所以反转后变为升序，这样才是最小的比当前大的排列。
+ */
+class Solution {
+    public void nextPermutation(int[] nums) {
+        if (nums == null || nums.length <= 1) return;
+        
+        // 步骤1：从后向前找到第一个降序的位置
+        int i = nums.length - 2;
+        while (i >= 0 && nums[i] >= nums[i + 1]) {
+            i--;
+        }
+        
+        // 步骤2：如果找到了这样的位置
+        if (i >= 0) {
+            // 从后向前找到第一个大于nums[i]的数
+            int j = nums.length - 1;
+            while (j >= 0 && nums[j] <= nums[i]) {
+                j--;
+            }
+            // 交换这两个数
+            swap(nums, i, j);
+        }
+        
+        // 步骤3：反转i+1到末尾的序列
+        reverse(nums, i + 1, nums.length - 1);
+    }
+    
+    private void swap(int[] nums, int i, int j) {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+    
+    private void reverse(int[] nums, int start, int end) {
+        while (start < end) {
+            swap(nums, start, end);
+            start++;
+            end--;
+        }
+    }
+}
+
+// 寻找重复数
+// 链表双指针找环的入口
+public int findDuplicate(int[] nums) {
+    // 将数组视为链表：索引 i 指向 nums[i]
+    // 由于有重复数字，链表会形成环
+    
+    // 阶段1：找到相遇点
+    int slow = nums[0];
+    int fast = nums[0];
+    
+    do {
+        slow = nums[slow];       // 慢指针：每次走一步
+        fast = nums[nums[fast]]; // 快指针：每次走两步
+    } while (slow != fast);
+    
+    // 阶段2：找到环的入口
+    slow = nums[0];              // 慢指针回到起点
+    while (slow != fast) {
+        slow = nums[slow];       // 两个指针都每次走一步
+        fast = nums[fast];
+    }
+    
+    return slow;                 // 环的入口就是重复数字
+}
