@@ -2266,20 +2266,22 @@ class Solution {
 
 // 搜索插入位置
 // 二分搜素
+// l 最后指向mid + 1，如果不存在target元素，那么就是插入位置
 class Solution {
     public int searchInsert(int[] nums, int target) {
-        int n = nums.length;
-        int left = 0, right = n - 1, ans = n;
-        while (left <= right) {
-            int mid = ((right - left) >> 1) + left;
-            if (target <= nums[mid]) {
-                ans = mid;
-                right = mid - 1;
-            } else {
-                left = mid + 1;
+        int left = 0;
+        int right = nums.length - 1;
+        while(left<=right) {
+            int mid = left + (right - left)/2;
+            if(nums[mid] == target) {
+                return mid;
+            } else if(nums[mid] < target) {
+                left = mid +1;
+            } else if (nums[mid] > target) {
+                right = mid -1;
             }
         }
-        return ans;
+        return left;
     }
 }
 
@@ -2357,38 +2359,56 @@ class Solution {
 /*
  * 判断是否有序，再选择搜索区间
  * 
- * 如果 [l, mid - 1] 是有序数组，且 target 的大小满足 [nums[l],nums[mid])，则我们应该将搜索范围缩小至 [l, mid - 1]，否则在 [mid + 1, r] 中寻找。
-如果 [mid, r] 是有序数组，且 target 的大小满足 [nums[mid+1],nums[r]]，则我们应该将搜索范围缩小至 [mid + 1, r]，否则在 [l, mid - 1] 中寻找。
- */
+ * 旋转数组特性：旋转后的数组由两个有序部分组成
+
+    关键观察：每次二分时，至少有一半是有序的
+
+    判断有序部分：
+        如果 nums[left] <= nums[mid]，左半部分有序
+        否则，右半部分有序
+    目标值定位：
+        在有序部分中判断目标值是否存在
+        如果存在，在有序部分继续搜索
+        如果不存在，在另一部分搜索
+ * 
+ * */
 class Solution {
     public int search(int[] nums, int target) {
-        int n = nums.length;
-        if (n == 0) {
-            return -1;
-        }
-        if (n == 1) {
-            return nums[0] == target ? 0 : -1;
-        }
-        int l = 0, r = n - 1;
-        while (l <= r) {
-            int mid = (l + r) / 2;
+        if (nums == null || nums.length == 0) return -1;
+        
+        int left = 0;
+        int right = nums.length - 1;
+        
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            
+            // 找到目标值
             if (nums[mid] == target) {
                 return mid;
             }
-            if (nums[0] <= nums[mid]) {
-                if (nums[0] <= target && target < nums[mid]) {
-                    r = mid - 1;
+            
+            // 判断左半部分是否有序
+            if (nums[left] <= nums[mid]) {
+                // 左半部分有序
+                if (target >= nums[left] && target < nums[mid]) {
+                    // target 在有序的左半部分
+                    right = mid - 1;
                 } else {
-                    l = mid + 1;
+                    // target 在右半部分
+                    left = mid + 1;
                 }
             } else {
-                if (nums[mid] < target && target <= nums[n - 1]) {
-                    l = mid + 1;
+                // 右半部分有序
+                if (target > nums[mid] && target <= nums[right]) {
+                    // target 在有序的右半部分
+                    left = mid + 1;
                 } else {
-                    r = mid - 1;
+                    // target 在左半部分
+                    right = mid - 1;
                 }
             }
         }
+        
         return -1;
     }
 }
@@ -2454,40 +2474,172 @@ class MinStack {
 }
 
 // 字符串解码
+// @b 双栈，主要是嵌套，【 时，两个都入栈
+/*
+ *  使用两个栈，一个存储数字（重复次数），一个存储字符串
 
-
-// 每日温度
-// 直接遍历中间可以退出，有点类似动态规划
+    遍历字符串：
+        如果当前字符是数字，解析数字（注意可能有多位数字）并存入数字栈
+        如果当前字符是字母，将其添加到当前字符串中
+        如果当前字符是'['，将当前字符串和数字分别入栈，然后重置当前字符串和数字（因为进入新的嵌套）
+        如果当前字符是']'，则从数字栈中弹出重复次数，从字符串栈中弹出之前保存的字符串，将当前字符串重复指定次数后拼接到弹出的字符串后面，作为当前字符串
+ */
 class Solution {
-    public int[] dailyTemperatures(int[] temperatures) {
-        int len = temperatures.length;
-        int[] dp = new int[len];
-        dp[temperatures.length-1] = 0;
-        for (int i=temperatures.length-2; i>=0; i--){
-            int j=i+1;
-            while (j<temperatures.length){
-                if (temperatures[i]<temperatures[j]){
-                    dp[i] = j-i;
-                    break;
-                }else {
-                    // 退出优化
-                    if (dp[j]==0){
-                        dp[i]=0;
-                        break;
-                    }
-                    j += dp[j];
+    public String decodeString(String s) {
+        // 使用两个栈：一个存数字，一个存字符串
+        Stack<Integer> countStack = new Stack<>();
+        Stack<StringBuilder> stringStack = new Stack<>();
+        
+        StringBuilder currentString = new StringBuilder();
+        int currentNum = 0;
+        
+        for (char c : s.toCharArray()) {
+            if (Character.isDigit(c)) {
+                // 处理数字（可能有多位数）
+                currentNum = currentNum * 10 + (c - '0');
+            } else if (c == '[') {
+                // 遇到左括号，将当前状态压栈
+                countStack.push(currentNum);
+                stringStack.push(currentString);
+                
+                // 重置当前状态
+                currentNum = 0;
+                currentString = new StringBuilder();
+            } else if (c == ']') {
+                // 遇到右括号，弹出栈顶状态进行计算
+                int repeatCount = countStack.pop();
+                StringBuilder decodedString = stringStack.pop();
+                
+                // 重复当前字符串 repeatCount 次
+                for (int i = 0; i < repeatCount; i++) {
+                    decodedString.append(currentString);
                 }
+                
+                currentString = decodedString;
+            } else {
+                // 普通字符，直接添加到当前字符串
+                currentString.append(c);
             }
         }
-        return dp;
+        
+        return currentString.toString();
+    }
+}
+
+// 每日温度
+// 其实就是for两边，中间用栈可以退出优化了一下，但每次都得压入
+// 栈存的是索引
+class Solution {
+    public int[] dailyTemperatures(int[] temperatures) {
+        int n = temperatures.length;
+        int[] answer = new int[n];
+        Stack<Integer> stack = new Stack<>(); // 存储索引的单调栈
+        
+        for (int i = 0; i < n; i++) {
+            // 当栈不为空且当前温度大于栈顶索引对应的温度
+            while (!stack.isEmpty() && temperatures[i] > temperatures[stack.peek()]) {
+                int prevIndex = stack.pop();
+                answer[prevIndex] = i - prevIndex; // 计算等待天数
+            }
+            // 将当前索引入栈
+            stack.push(i);
+        }
+        
+        // 栈中剩余的元素默认就是0（没有更高温度）
+        return answer;
     }
 }
 
 // 柱状图中最大的矩形（hard）
+// 和接雨水感觉有点像，这里用栈优化，去找左边第一个小于当前高度的位置，右边第一个小于当前高度的位置
+// 注意数组存的是索引，后面再计算一遍
+class Solution {
+    public int largestRectangleArea(int[] heights) {
+        if (heights == null || heights.length == 0) return 0;
+        
+        int n = heights.length;
+        int[] leftBound = new int[n];  // 左边第一个小于当前高度的位置
+        int[] rightBound = new int[n]; // 右边第一个小于当前高度的位置
+        
+        // 初始化右边界数组
+        Arrays.fill(rightBound, n);
+        
+        Stack<Integer> stack = new Stack<>();
+        
+        // 计算左边界
+        for (int i = 0; i < n; i++) {
+            while (!stack.isEmpty() && heights[i] <= heights[stack.peek()]) {
+                stack.pop();
+            }
+            leftBound[i] = stack.isEmpty() ? -1 : stack.peek();
+            stack.push(i);
+        }
+        
+        stack.clear();
+        
+        // 计算右边界
+        for (int i = n - 1; i >= 0; i--) {
+            while (!stack.isEmpty() && heights[i] <= heights[stack.peek()]) {
+                stack.pop();
+            }
+            rightBound[i] = stack.isEmpty() ? n : stack.peek();
+            stack.push(i);
+        }
+        
+        // 计算最大面积
+        int maxArea = 0;
+        for (int i = 0; i < n; i++) {
+            int width = rightBound[i] - leftBound[i] - 1;
+            maxArea = Math.max(maxArea, heights[i] * width);
+        }
+        
+        return maxArea;
+    }
+}
 
 
 // 数组中的第K个最大元素
 // 堆排+建堆+从栈顶移除k个，其实就是堆排最后少移几个
+// 大顶堆不保证前序遍历递增，所以后面需要取几个往后移
+// 看这个直接用堆排，就是最后一点不一样，这里直接交换k次就行了，不用像堆排全部遍历一遍
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+        if(nums.length == 1) {
+            return nums[0];
+        }
+        for (int i=nums.length/2-1; i>=0; i--) {
+            heapfiy(nums, i, nums.length);
+        }
+        // 这里直接交换k次就行了
+        for(int i=nums.length-1; i>=nums.length-k; i--){
+            swap(nums, i, 0);
+            heapfiy(nums, 0, i);
+        }
+        return nums[nums.length-k];
+    }
+
+    public void heapfiy(int[] nums, int cur, int size) {
+        int left = cur *2 +1;
+        int right = cur*2 +2;
+        int max = cur;
+        if(left<size && nums[left]>nums[max]) {
+            max = left;
+        }
+        if(right<size && nums[right]>nums[max]){
+            max = right;
+        }
+        if (max != cur) {
+            swap(nums, cur, max);
+            heapfiy(nums, max, size);
+        }
+    }
+
+    public void swap(int[] arr, int a, int b) {
+        int tmp = arr[a];
+        arr[a] = arr[b];
+        arr[b] = tmp;
+    }
+}
 class Solution {
     public int findKthLargest(int[] nums, int k) {
         int heapSize = nums.length;
@@ -2581,6 +2733,29 @@ public class Solution {
 }
 
 // 跳跃游戏
+// 这个看能不能跳过去 maxPosition
+/*
+ * 贪心算法，maxJump，for一边看能不能调到最远
+ * 
+ * 贪心和动态规划的区别：贪心算法是每次都选择局部最优，动态规划是选择全局最优
+ */
+
+class Solution {
+    public boolean canJump(int[] nums) {
+        if (nums.length == 0 || nums.length == 1) {
+            return true;
+        }
+        int maxJump = 0;
+        for(int i=0; i<nums.length; i++) {
+            if (i<=maxJump) {
+                maxJump = Math.max(maxJump, nums[i]+i);
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 /*
     动态规划算法：
         定义子问题：dp[i]表示前i个节点的能跳跃到的最大距离;
@@ -2616,13 +2791,15 @@ class Solution {
 }
 
 
-// 跳跃游戏II
-// 贪心，end maxPosition steps
+// 跳跃游戏II @b
+// 这个一定能跳过去，看最少跳几次
+// 贪心，maxPosition end steps
+// 注意最后一个不跳，第二种写法好理解一点
 public int jump(int[] nums) {
     int end = 0;
     int maxPosition = 0; 
     int steps = 0;
-    for(int i = 0; i < nums.length - 1; i++){
+    for(int i = 0; i < nums.length - 1; i++){ // @z i < nums.length - 1
         //找能跳的最远的
         maxPosition = Math.max(maxPosition, nums[i] + i); 
         if( i == end){ //遇到边界，就更新边界，并且步数加一
@@ -2631,6 +2808,26 @@ public int jump(int[] nums) {
         }
     }
     return steps;
+}
+// 或者按下面的写法
+class Solution {
+    public int jump(int[] nums) {
+        if (nums.length == 0 || nums.length == 1) {
+            return 0;
+        }
+        int end = 0;
+        int maxJump = 0;
+        int step = 0;
+        for (int i=0; i<nums.length; i++) {
+            maxJump = Math.max(maxJump, i+nums[i]);
+            // 更新end, 如果是边界就不用再跳了
+            if (i==end && i!=nums.length-1) {
+                end = maxJump;
+                step++;
+            }
+        }
+        return step;
+    }
 }
 
 // 划分字母区间（没有）
@@ -2705,6 +2902,7 @@ class Solution {
 
 // 完全平方数
 // @b 类似凑硬币，但是凑的是i^2
+// 转移方程内部从n^2开始
 class Solution {
     public int numSquares(int n) {
         var f = new int[n + 1];
@@ -2770,24 +2968,36 @@ public class Solution {
 }
 
 // 最长递增子序列
-// for 所有
+// for 所有，for所有一般去每个的最大，关键还是这个dp数组的定义
+/*
+ *  定义 dp[i] 为以第 i 个元素结尾的最长递增子序列的长度。对于每个 i，我们遍历所有 j < i，如果 nums[j] < nums[i]，那么 dp[i] 可以取 dp[j] + 1 的最大值。
+
+    状态转移方程：
+        dp[i] = max(dp[j]) + 1, 对于所有 j < i 且 nums[j] < nums[i]
+
+    初始化：每个位置的 dp 值至少为1（即自身作为一个序列）。
+
+    最后，整个数组的最长递增子序列就是 dp 数组中的最大值。
+
+ */
 class Solution {
     public int lengthOfLIS(int[] nums) {
-        int[] dp = new int[nums.length];
-        int max = 0;
-        Arrays.fill(dp,1);
-        for(int i=0; i<nums.length; i++){
-            for(int j=0; j<i; j++){
-                if (nums[i]>nums[j]){
-                    if(dp[i]<dp[j]+1){
-                        dp[i]=dp[j]+1;
-                    }
+        if (nums == null || nums.length == 0) {
+            return 0;
+        }
+        int n = nums.length;
+        int[] dp = new int[n];
+        Arrays.fill(dp, 1);
+        int maxLength = 1;
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < i; j++) {
+                if (nums[j] < nums[i]) {
+                    dp[i] = Math.max(dp[i], dp[j] + 1);
                 }
             }
-            if(max<dp[i])
-                max=dp[i];
+            maxLength = Math.max(maxLength, dp[i]);
         }
-       return max;
+        return maxLength;
     }
 }
 
@@ -3015,6 +3225,40 @@ public class CompleteKnapsack {
         
         System.out.println("完全背包二维DP: " + completeKnapsack2D(capacity, weights, values));
         System.out.println("完全背包一维DP: " + completeKnapsack1D(capacity, weights, values));
+    }
+}
+
+// 分割等和子集
+class Solution {
+    public boolean canPartition(int[] nums) {
+        if (nums == null || nums.length < 2) {
+            return false;
+        }
+        int sum = 0;
+        for (int i = 0; i < nums.length; i++) {
+            sum += nums[i];
+        }
+        if (sum % 2 != 0) {
+            return false;
+        }
+        sum = sum / 2;
+        // 0-1背包问题
+        // i是第i个物品，j是weight
+        boolean[][] dp = new boolean[nums.length + 1][sum + 1];
+        // 初始化：和为0总是可以达成（不选任何数字）
+        for (int i = 0; i <= nums.length; i++) {
+            dp[i][0] = true;
+        }
+        for (int i = 1; i <= nums.length; i++) {
+            for (int j = 1; j <= sum; j++) {
+                if (nums[i - 1] > j) {
+                    dp[i][j] = dp[i - 1][j];
+                } else {
+                    dp[i][j] = dp[i - 1][j - nums[i - 1]] || dp[i - 1][j];
+                }
+            }
+        }
+        return dp[nums.length][sum];
     }
 }
 
