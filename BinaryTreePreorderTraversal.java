@@ -2357,7 +2357,7 @@ class Solution {
 
 // 搜索旋转排序数组
 /*
- * 判断是否有序，再选择搜索区间
+ * 判断是否有序，再选择搜索区间，注意边界条件
  * 
  * 旋转数组特性：旋转后的数组由两个有序部分组成
 
@@ -2388,9 +2388,9 @@ class Solution {
             }
             
             // 判断左半部分是否有序
-            if (nums[left] <= nums[mid]) {
+            if (nums[left] <= nums[mid]) { // 注意边界
                 // 左半部分有序
-                if (target >= nums[left] && target < nums[mid]) {
+                if (target >= nums[left] && target < nums[mid]) { // 注意边界
                     // target 在有序的左半部分
                     right = mid - 1;
                 } else {
@@ -2399,7 +2399,7 @@ class Solution {
                 }
             } else {
                 // 右半部分有序
-                if (target > nums[mid] && target <= nums[right]) {
+                if (target > nums[mid] && target <= nums[right]) { // 注意边界
                     // target 在有序的右半部分
                     left = mid + 1;
                 } else {
@@ -2408,10 +2408,57 @@ class Solution {
                 }
             }
         }
-        
         return -1;
     }
 }
+// 寻找旋转排序数组中的最小值
+// 注意闭区间但是条件中没有等于
+/*
+ * 设：
+
+    left = 0
+    right = nums.length - 1
+    while (left < right)：
+    取 mid = (left + right) / 2
+
+    如果 nums[mid] > nums[right]
+        说明最小值一定在 右边，left = mid + 1
+
+    否则（nums[mid] < nums[right]）
+        说明最小值在 左边或就是 mid，right = mid
+
+    循环结束时：
+        left == right，就是最小值的位置。
+ */
+public class FindMinInRotatedArray {
+
+    public static int findMin(int[] nums) {
+        int left = 0;
+        int right = nums.length - 1;
+
+        while (left < right) {  // 注意这里
+            int mid = left + (right - left) / 2;
+
+            // 如果中点值大于最右值，说明最小值一定在右半边
+            if (nums[mid] > nums[right]) {
+                left = mid + 1;
+            } else {
+                // 否则最小值在左半边（包括 mid）
+                right = mid; // 注意这里
+            }
+        }
+
+        // 循环结束时 left == right，指向最小值
+        return nums[left];
+    }
+
+    public static void main(String[] args) {
+        System.out.println(findMin(new int[]{3,4,5,1,2})); // 1
+        System.out.println(findMin(new int[]{4,5,6,7,0,1,2})); // 0
+        System.out.println(findMin(new int[]{11,13,15,17})); // 11
+    }
+}
+
 
 // 寻找两个正序数组的中位数 （hard）
 
