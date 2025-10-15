@@ -1704,10 +1704,11 @@ class Solution {
     }
 }
 
-// 翻转图像
+// 旋转图像
 /*
  * 水平翻转
  * 主对角线翻转
+ * 按流程或者水平反转再对角线反转
  */
 class Solution {
     public void rotate(int[][] matrix) {
@@ -2440,7 +2441,7 @@ public class FindMinInRotatedArray {
             int mid = left + (right - left) / 2;
 
             // 如果中点值大于最右值，说明最小值一定在右半边
-            if (nums[mid] > nums[right]) {
+            if (nums[mid] > nums[right]) { // 注意这里，永远不会等于
                 left = mid + 1;
             } else {
                 // 否则最小值在左半边（包括 mid）
