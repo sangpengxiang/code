@@ -153,6 +153,84 @@ public class BinaryTreePreorderTraversal {
         System.out.println("迭代前序遍历: " + solution.preorderIterative(root));
     }
 
+    // 二叉树迭代遍历写法，这个后序好记
+    // 前序遍历：根 → 左 → 右
+    public List<Integer> preorderTraversal(TreeNode root) {
+        List<Integer> result = new ArrayList<>();
+        if (root == null) return result;
+
+        Stack<TreeNode> stack = new Stack<>();
+        stack.push(root);
+
+        while (!stack.isEmpty()) {
+            TreeNode node = stack.pop();
+            result.add(node.val);  // 先处理根
+
+            // 先压右（后访问），再压左（先访问）
+            if (node.right != null) {
+                stack.push(node.right);
+            }
+            if (node.left != null) {
+                stack.push(node.left);
+            }
+        }
+        return result;
+    }
+
+    // 中序遍历：左 → 根 → 右
+    public List<Integer> inorderTraversal(TreeNode root) {
+        List<Integer> result = new ArrayList<>();
+        if (root == null) return result;
+
+        Stack<TreeNode> stack = new Stack<>();
+        TreeNode curr = root;
+
+        while (curr != null || !stack.isEmpty()) {
+            // 一直向左走，把所有左子节点压栈
+            while (curr != null) {
+                stack.push(curr);
+                curr = curr.left;
+            }
+
+            // 弹出最左边的节点（当前根）
+            curr = stack.pop();
+            result.add(curr.val);
+
+            // 转向右子树
+            curr = curr.right;
+        }
+        return result;
+    }
+
+    // 后序遍历：左 → 右 → 根
+    // 后序遍历的另一种常见写法（模拟前序 + 反转）
+    public List<Integer> postorderTraversalReverse(TreeNode root) {
+        List<Integer> result = new ArrayList<>();
+        if (root == null) return result;
+
+        Stack<TreeNode> stack = new Stack<>();
+        stack.push(root);
+
+        while (!stack.isEmpty()) {
+            TreeNode node = stack.pop();
+            result.add(node.val);  // 先记录（顺序是根→右→左）
+
+            if (node.left != null) {
+                stack.push(node.left);
+            }
+            if (node.right != null) {
+                stack.push(node.right);
+            }
+        }
+
+        // 反转得到 左→右→根
+        List<Integer> reversed = new ArrayList<>();
+        for (int i = result.size() - 1; i >= 0; i--) {
+            reversed.add(result.get(i));
+        }
+        return reversed;
+    }
+
     // 二叉树层序遍历 BFS
     public class BinaryTreeLevelOrderTraversal {
     
