@@ -519,6 +519,8 @@ class Solution {
         if (node == null) {
             return true;
         }
+        // 左子树：上界变为当前节点值
+        // 右子树：下界变为当前节点值
         long x = node.val;
         return left < x && x < right &&
                isValidBST(node.left, left, x) &&
@@ -617,7 +619,71 @@ class Solution {
         }
     }
 }
+// 从前序与中序遍历序列构造二叉树（看这个）
+/*
+ * 核心思想（非常重要）
+    前序遍历的第一个元素 一定 是当前树的根节点。
+    在中序遍历中找到这个根节点的位置，就能把中序序列分成左右两部分：
 
+    根左边 → 左子树的中序
+    根右边 → 右子树的中序
+
+    而前序遍历中，根节点之后 紧接着的就是左子树的前序，再后面是右子树的前序。
+ */
+class Solution {
+    private Map<Integer, Integer> inorderMap;
+    
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        if (preorder == null || inorder == null || preorder.length == 0) {
+            return null;
+        }
+        
+        // 建立 值 -> 中序索引 的映射，方便 O(1) 查找根节点位置
+        inorderMap = new HashMap<>();
+        for (int i = 0; i < inorder.length; i++) {
+            inorderMap.put(inorder[i], i);
+        }
+        
+        return build(preorder, 0, preorder.length - 1, 
+                     inorder, 0, inorder.length - 1);
+    }
+    
+    private TreeNode build(int[] preorder, int preStart, int preEnd,
+                           int[] inorder, int inStart, int inEnd) {
+        // 区间无效
+        if (preStart > preEnd || inStart > inEnd) {
+            return null;
+        }
+        
+        // 当前子树的根节点（前序遍历的第一个元素）
+        int rootVal = preorder[preStart];
+        TreeNode root = new TreeNode(rootVal);
+        
+        // 找到根在中序遍历中的位置
+        int rootIndex = inorderMap.get(rootVal);
+        
+        // 左子树节点个数
+        int leftSize = rootIndex - inStart;
+        
+        // 递归构造左子树
+        root.left = build(preorder, 
+                          preStart + 1,              // 前序：跳过根
+                          preStart + leftSize,       // 左子树结束位置
+                          inorder, 
+                          inStart, 
+                          rootIndex - 1);
+        
+        // 递归构造右子树
+        root.right = build(preorder, 
+                           preStart + leftSize + 1,   // 前序：左子树之后
+                           preEnd, 
+                           inorder, 
+                           rootIndex + 1, 
+                           inEnd);
+        
+        return root;
+    }
+}
 // 从前序与中序遍历序列构造二叉树
 /*
  * 前序遍历的第一个元素总是树的根节点
@@ -664,6 +730,13 @@ class Solution {
 
 // 路径总和 III
 // 前缀和 + 哈希表（优化解法）
+/*
+ * 核心思想：
+    在从根到当前节点的路径上，维护「前缀和」
+    用一个 Map 记录：从根到当前路径上，某个前缀和出现的次数
+    当我们到达一个节点 cur，前缀和为 currSum
+    那么如果 currSum - targetSum 在 Map 中出现过 k 次，说明有 k 条路径可以和当前路径拼接成和为 targetSum 的路径
+ */
 class Solution {
     public int pathSum(TreeNode root, int targetSum) {
         // 使用HashMap记录前缀和出现的次数
@@ -701,6 +774,11 @@ class Solution {
 
 // 二叉树的最近公共祖先
 /**
+ * 
+ * 核心思想（后序遍历 + 递归）
+    最经典、最优雅的写法是后序遍历（左右根），用递归返回值来表达“子树里有没有找到 p 或 q”。
+    递归函数的语义：
+ * 
  * Definition for a binary tree node.
  * public class TreeNode {
  *     int val;
@@ -709,6 +787,41 @@ class Solution {
  *     TreeNode(int x) { val = x; }
  * }
  */
+
+//  更好理解的递归写法
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        // 递归出口 + 提前返回的情况
+        if (root == null) {
+            return null;
+        }
+        if (root == p || root == q) {
+            return root;  // 找到 p 或 q 就直接返回（可能是 LCA，也可能是其中之一）
+        }
+        
+        // 后序遍历：先看左右子树
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        
+        // 情况1：左右子树都找到了 → 当前节点就是 LCA
+        if (left != null && right != null) {
+            return root;
+        }
+        
+        // 情况2：左子树找到了，右子树没找到
+        if (left != null) {
+            return left;
+        }
+        
+        // 情况3：右子树找到了，左子树没找到
+        if (right != null) {
+            return right;
+        }
+        
+        // 情况4：左右都没找到
+        return null;
+    }
+}
 class Solution {
     public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
         // 递归终止条件
@@ -734,6 +847,16 @@ class Solution {
 // 二叉树中的最大路径和
 // 递归实现
 /**
+ * 
+ * maxGain(node)：以 node 为起点，向下走（只能选左或右或都不选），能得到的最大单边路径和
+ * 返回值含义：
+    从 node 开始 向下 的最大单链路径和（可以为 0 或负数，但调用方会取 max(0, ...)）
+    注意：这个值 不会包含 “拐弯” 的部分，只是一条单臂
+
+    所以两种情况：
+    1、以当前root为拐弯点，加左侧单链maxGain和加右侧单链maxGain
+    2、递归 maxGain(node) = max(maxGain(node.left), maxGain(node.right)) + node.val
+ * 
  * Definition for a binary tree node.
  * public class TreeNode {
  *     int val;
@@ -749,6 +872,7 @@ class Solution {
  * }
  */
 class Solution {
+    // 全局变量，记录最大路径和
     private int maxSum = Integer.MIN_VALUE;
     
     public int maxPathSum(TreeNode root) {
@@ -756,23 +880,25 @@ class Solution {
         return maxSum;
     }
     
+    /**
+     * 返回：以 node 为起点，向下走的最大单边路径和（可以是 0）
+     * 同时会在过程中更新全局 maxSum（考虑以当前节点为最高点的路径）
+     */
     private int maxGain(TreeNode node) {
         if (node == null) {
             return 0;
         }
         
-        // 递归计算左右子树的最大贡献值
-        // 如果贡献值为负，则不计入（取0）
-        int leftGain = Math.max(maxGain(node.left), 0);
+        // 递归得到左右子树的最大贡献（负数就当 0 处理）
+        int leftGain  = Math.max(maxGain(node.left), 0);
         int rightGain = Math.max(maxGain(node.right), 0);
         
-        // 计算当前节点的路径和（可以包含左右子树）
-        int priceNewPath = node.val + leftGain + rightGain;
+        // 以当前节点为“拐弯点”的最大路径和（可能成为答案）
+        int currentPathSum = node.val + leftGain + rightGain;
+        maxSum = Math.max(maxSum, currentPathSum);
         
-        // 更新全局最大路径和
-        maxSum = Math.max(maxSum, priceNewPath);
-        
-        // 返回当前节点的最大贡献值（只能选择一条路径）
+        // 返回给父节点的：只能选一边（或都不选），取最大值 + 当前节点
+        // 这条路是继续往上走的单边路径
         return node.val + Math.max(leftGain, rightGain);
     }
 }
@@ -807,6 +933,115 @@ class Solution {
         }
         return pre;
     }
+}
+// 迭代
+/*
+ * 初始：
+    null ← 1 → 2 → 3 → 4 → 5 → null
+    prev   curr
+    第一步：
+    null ← 1 ← 2 → 3 → 4 → 5 → null
+    prev   curr
+    第二步：
+    null ← 1 ← 2 ← 3 → 4 → 5 → null
+    prev   curr
+    ...
+    最后：
+    null ← 1 ← 2 ← 3 ← 4 ← 5
+    prev(返回)
+ */
+class Solution {
+    public ListNode reverseList(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        
+        while (curr != null) {
+            // 先记住下一个节点（很重要！）
+            ListNode nextTemp = curr.next;
+            
+            // 反转指针
+            curr.next = prev;
+            
+            // 整体后移
+            prev = curr;
+            curr = nextTemp;
+        }
+        
+        return prev;  // 新的头节点
+    }
+}
+
+// 递归
+// “先反转后面的链表，再把当前节点挂到后面链表的末尾”
+public ListNode reverseList(ListNode head) {
+    // 边界
+    if (head == null || head.next == null) {
+        return head;
+    }
+    
+    // 递归到最后一个节点
+    ListNode newHead = reverseList(head.next);
+    
+    // 此时 head.next 是倒数第二个节点
+    // 让它指向 head，实现反转
+    head.next.next = head;
+    
+    // 断开原来的指向（防止成环）
+    head.next = null;
+    
+    return newHead;
+}
+
+// 反转链表前 N 个节点（进阶）
+// 全局变量，记录第 n+1 个节点（反转完成后要接上）
+ListNode successor = null;
+
+public ListNode reverseN(ListNode head, int n) {
+    if (n == 1) {
+        // 记录第 n+1 个节点
+        successor = head.next;
+        return head;
+    }
+    
+    ListNode newHead = reverseN(head.next, n - 1);
+    
+    head.next.next = head;
+    head.next = successor;
+    
+    return newHead;
+}
+
+// 反转链表的某一段
+/*
+ * 核心思路：
+
+    找到 left 前一个节点（pre）
+    反转从 left 到 right 这段
+    把 pre 接上新的头，把 right 接上原来的后续
+ */
+public ListNode reverseBetween(ListNode head, int left, int right) {
+    // 哑节点方便处理头节点情况
+    ListNode dummy = new ListNode(0);
+    dummy.next = head;
+    ListNode pre = dummy;
+    
+    // 找到 left 前一个节点
+    for (int i = 0; i < left - 1; i++) {
+        pre = pre.next;
+    }
+    
+    ListNode start = pre.next;      // 反转段的起点
+    ListNode then = start.next;     // 反转段的下一个
+    
+    // 反转 right - left 次
+    for (int i = 0; i < right - left; i++) {
+        start.next = then.next;
+        then.next = pre.next;
+        pre.next = then;
+        then = start.next;
+    }
+    
+    return dummy.next;
 }
 
 // 回文链表
