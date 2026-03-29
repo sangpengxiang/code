@@ -1176,7 +1176,7 @@ class Solution {
  * 最后也可能进位
  */
 class Solution {
-    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {  
         ListNode pre = new ListNode(0);
         ListNode cur = pre;
         int carry = 0;
@@ -1203,6 +1203,44 @@ class Solution {
 }
 
 // 删除链表的倒数第 N 个结点
+/**
+ * 链表节点的定义，看这个
+ */
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode() {}
+    ListNode(int val) { this.val = val; }
+    ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+}
+
+class Solution {
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        // 1. 哨兵节点：处理删除头节点的特殊情况
+        ListNode dummy = new ListNode(0, head);
+        ListNode fast = dummy;
+        ListNode slow = dummy;
+
+        // 2. 快指针先走 n + 1 步
+        // 这样当 fast 走到最后时，slow 刚好在倒数第 n 个节点的前一个位置
+        for (int i = 0; i <= n; i++) {
+            fast = fast.next;
+        }
+
+        // 3. 同时移动，直到 fast 走到尽头
+        while (fast != null) {
+            fast = fast.next;
+            slow = slow.next;
+        }
+
+        // 4. 删除节点
+        slow.next = slow.next.next;
+
+        return dummy.next;
+    }
+}
+
+
 // 先过N步，但是感觉这里声明可以简略点
 class Solution {
     public ListNode removeNthFromEnd(ListNode head, int n) {
@@ -1230,25 +1268,33 @@ class Solution {
 // 迭代
 class Solution {
     public ListNode swapPairs(ListNode head) {
-        if (head == null || head.next == null) {
-            return head;
-        }
-        
+        // 1. 创建哨兵节点，处理头节点交换的问题
         ListNode dummy = new ListNode(0);
         dummy.next = head;
-        ListNode current = dummy;
         
-        while (current.next != null && current.next.next != null) {
-            ListNode node1 = current.next;
-            ListNode node2 = current.next.next;
+        // temp 是我们要交换的两个节点的前驱
+        ListNode temp = dummy;
+        
+        // 2. 只有当后面至少有两个节点时，才进行交换
+        while (temp.next != null && temp.next.next != null) {
+            ListNode node1 = temp.next;      // 第一个节点
+            ListNode node2 = temp.next.next; // 第二个节点
             
-            // 交换节点
+            // --- 开始执行交换逻辑 ---
+            
+            // 步骤一：前驱指向 node2
+            temp.next = node2;
+            
+            // 步骤二：node1 指向 node2 的后面（防止断链）
             node1.next = node2.next;
-            node2.next = node1;
-            current.next = node2;
             
-            // 移动到下一对的前一个位置
-            current = node1;
+            // 步骤三：node2 指向 node1，完成翻转
+            node2.next = node1;
+            
+            // --- 移动指针 ---
+            
+            // temp 移动到下一对节点的前驱位置（即当前的 node1）
+            temp = node1;
         }
         
         return dummy.next;
