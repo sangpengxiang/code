@@ -510,6 +510,28 @@ class Solution {
 
 // 验证二叉搜索树
 // 需要辅助函数，参数中药塞mid 和 max
+// 注意要使用long
+
+// 自写版，感觉比下面好理解
+class Solution {
+    public boolean isValidBST(TreeNode root) {
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
+        return help(root, min, max);
+    }
+
+    public boolean help(TreeNode root, long min, long max) {
+        if(root == null){
+            return true;
+        }
+        if(root.val <= min ||root.val >= max){
+            return false;
+        }
+        return help(root.left, min, root.val) && help(root.right, root.val, max);
+
+    }
+}
+
 class Solution {
     public boolean isValidBST(TreeNode root) {
         return isValidBST(root, Long.MIN_VALUE, Long.MAX_VALUE);
@@ -591,7 +613,7 @@ public List<Integer> rightSideView(TreeNode root) {
  * 对于当前节点，如果其左子节点不为空
     找到左子树的最右节点
     将右子树接到左子树的最右节点
-    将左子树移到右子树位置，左子树置空
+    将当前左子树移到最右子树右节点位置，当前左子树置空
     移动到下一个节点
  */
 class Solution {
@@ -907,6 +929,11 @@ class Solution {
 ///////////////////////////////
 // 相交链表
 // 遍历完，换对方
+/*
+* 这就是这个解法的精妙之处：无论是否相交，两个指针最终都会“相遇”：
+    相交 → 在相交的第一个节点相遇
+    不相交 → 在 null 处相遇
+*/
 public class Solution {
     public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
         if (headA == null || headB == null) {
@@ -1853,6 +1880,15 @@ class Solution {
 
 // 最长递增子序列（经典动态规划）
 // 动态规划，子序列不要求连续
+// 需要for两遍，
+/*
+    状态定义：
+        p[i] 表示以 nums[i] 结尾的最长递增子序列的长度。
+    状态转移：
+        对每个 i，遍历 j < i，如果 nums[i] > nums[j]，则可以接在 dp[j] 后面：
+        dp[i] = max(dp[i], dp[j] + 1)
+    初始化：每个位置至少长度为 1（自己本身）。
+*/
 class Solution {
     public int lengthOfLIS(int[] nums) {
         int[] dp = new int[nums.length];
@@ -1876,6 +1912,7 @@ class Solution {
 // 合并区间
 // 1、排序 
 // 2、比较当前是否比上一个右侧小，是加进数组去，不是，更新当前结果最后一个数组右侧值，取当前和上一个右侧最大值
+// 注意Array 和数组互转
 class Solution {
     public int[][] merge(int[][] intervals) {
         if (intervals.length == 0) {
@@ -1963,6 +2000,7 @@ class Solution {
 
 // 缺失的第一个正数
 // 类似两数之和 和为K的子数组，存到Hash里，前缀和
+// 这个解法有点离谱哦
 public class Solution {
 
     public int firstMissingPositive(int[] nums) {
@@ -2040,6 +2078,7 @@ class Solution {
             }
             right--;
             
+
             // 检查是否还有行需要遍历
             if (top <= bottom) {
                 // 从右到左遍历下边界
@@ -2437,6 +2476,7 @@ class Solution {
 
 // 括号生成
 // 剪枝 + DFS + 尝试添加左右括号
+// 这个可以先添加再跑判断，不用添加的时候就判断
 class Solution {
     ArrayList<String> res = new ArrayList<>();
     public List<String> generateParenthesis(int n) {
@@ -2510,6 +2550,75 @@ class Solution {
 
 // 分割回文串
 // DFS+判断回文
+// 看这个解法
+/*
+解法思路（回溯 + 预处理回文判断）
+
+回溯框架：
+    从当前位置 start 开始，尝试把 [start, i] 作为一段子串。
+    如果这段是回文，就加入当前路径 path，递归进入下一层 i+1。
+    递归到 start == s.length() 时，找到一个完整分割方案，加入答案。
+    回溯：撤销选择（path.removeLast()），尝试下一个结束位置 i。
+
+关键优化：
+    预计算一个二维布尔数组 isPalindrome[i][j] 表示 s[i..j] 是否为回文（用 DP，O(n²) 时间）。
+    这样每次判断子串是否回文只需 O(1)。
+*/
+class Solution {
+    public List<List<String>> partition(String s) {
+        int n = s.length();
+        // 预处理：isPalindrome[i][j] 表示 s[i..j] 是否是回文
+        boolean[][] isPalindrome = new boolean[n][n];
+        for (int i = 0; i < n; i++) {
+            Arrays.fill(isPalindrome[i], true); // 单字符一定是回文
+        }
+        // 注意这里的dp判断
+        // 这里i=n-1实际上是进不去的
+        /*
+            为什么要从右往左、从短到长填表？（DP 的依赖顺序）
+            回文判断具有最优子结构：
+            s[i..j] 是回文 当且仅当：
+                s[i] == s[j] 并且
+                s[i+1 .. j-1] 也是回文
+            所以我们在填 isPalindrome[i][j] 时，必须已经知道 isPalindrome[i+1][j-1] 的结果。
+            因此必须按照长度从小到大来计算，而 i 从大到小、j 从小到大，正好满足这个依赖关系。
+        */
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = i + 1; j < n; j++) {
+                isPalindrome[i][j] = (s.charAt(i) == s.charAt(j)) && isPalindrome[i + 1][j - 1];
+            }
+        }
+        
+        List<List<String>> result = new ArrayList<>();
+        List<String> path = new ArrayList<>();
+        backtrack(s, 0, isPalindrome, path, result);
+        return result;
+    }
+    
+    /* 
+        s = "aab"
+        start = 2：说明前面已经分割完了 "aa"，现在要从下标 2 开始继续分割（即字符 'b'）
+        isPalindrome：用来快速判断 s[2..2] 是否是回文（是）
+        path = ["aa"]：目前已经选择的分割方案
+        result：最终要收集所有合法方案的容器
+    */
+    private void backtrack(String s, int start, boolean[][] isPalindrome,
+                           List<String> path, List<List<String>> result) {
+        if (start == s.length()) {
+            result.add(new ArrayList<>(path));  // 找到一个合法分割，深拷贝加入答案
+            return;
+        }
+        
+        for (int end = start; end < s.length(); end++) {
+            if (isPalindrome[start][end]) {     // 当前子串是回文
+                path.add(s.substring(start, end + 1));
+                backtrack(s, end + 1, isPalindrome, path, result);
+                path.remove(path.size() - 1);   // 回溯
+            }
+        }
+    }
+}
+
 class Solution {
     public List<List<String>> partition(String s) {
         List<List<String>> result = new ArrayList<>();
@@ -2627,6 +2736,12 @@ class Solution {
 // 搜索插入位置
 // 二分搜素
 // l 最后指向mid + 1，如果不存在target元素，那么就是插入位置
+/* 为什么left
+    在整个搜索过程中：
+        left 始终指向第一个可能 >= target 的位置（或应该插入的位置）。
+        right 始终指向最后一个 < target 的位置（或更左）。
+    一定是 当 while (left <= right) 循环结束时，一定满足 left > right（即 left == right + 1）。
+ */
 class Solution {
     public int searchInsert(int[] nums, int target) {
         int left = 0;
