@@ -1,14 +1,36 @@
 import java.util.*;
 
+import org.w3c.dom.Node;
+
 public class Base {
     public static void main(String[] args) {
 1、数组
     int[] nums = new int[10];
     boolean[][] visited = new boolean[10][10];
+    int[] arr3 = new int[]{1,2,3};
+    int[] arr4 = {1,2,3};        // 简化写法
     //函数开头要做非空检验
     if(nums.length==0){
         return;
     }
+
+    // 数组转List（注意：返回的是固定长度列表）
+    List<Integer> list = Arrays.asList(1, 2, 3);
+    // 基本类型需要包装类
+    Integer[] arr = {1,2,3};
+    List<Integer> list2 = Arrays.asList(arr);
+
+    // List转数组，注意这里入参
+    String[] arr3 = list.toArray(new String[0]);
+
+    // 按第一列升序（默认）
+    int[][] arr = {{3, 8}, {1, 5}, {2, 4}};
+    Arrays.sort(arr, (a, b) -> a[0] - b[0]);
+    // 结果：[[1,5], [2,4], [3,8]]
+
+    // 按第一列降序
+    Arrays.sort(arr, (a, b) -> b[0] - a[0]);
+    // 结果：[[3,8], [2,4], [1,5]]
 2、字符串String
     String s1 = "ABC";
     int size = s1.length();

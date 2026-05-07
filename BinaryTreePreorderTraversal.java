@@ -1268,26 +1268,31 @@ class Solution {
 }
 
 
-// 先过N步，但是感觉这里声明可以简略点
+// 先过N步
 class Solution {
     public ListNode removeNthFromEnd(ListNode head, int n) {
-        ListNode node1 = new ListNode(0);
-        ListNode node2 = new ListNode(0);
-        ListNode node3 ;
-        node1.next = head;
-        node2.next = head;
-        node3 = node2;
-        if (head.next==null) return null;
+        // 哑节点，方便处理删除头节点的情况
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
         
-        for (int i=0; i<n; i++){
-            node1 = node1.next;
+        ListNode fast = dummy;
+        ListNode slow = dummy;
+        
+        // 1. fast 先走 n 步
+        for (int i = 0; i < n; i++) {
+            fast = fast.next;
         }
-        while (node1!=null&&node1.next!=null){
-            node1 = node1.next;
-            node2 = node2.next;
+        
+        // 2. fast 和 slow 同时往前走，直到 fast 走到最后一个节点
+        while (fast.next != null) {
+            fast = fast.next;
+            slow = slow.next;
         }
-        node2.next = node2.next.next;
-        return node3.next;
+        
+        // 3. slow.next 就是要删除的节点
+        slow.next = slow.next.next;
+        
+        return dummy.next;
     }
 }
 
@@ -1999,6 +2004,46 @@ class Solution {
 }
 
 // 缺失的第一个正数
+
+// 原地hash
+// 注意中间的for while
+/*
+    步骤	作用
+    条件判断 nums[i] > 0 && nums[i] <= n	只处理范围在 [1,n] 的数
+    条件判断 nums[nums[i]-1] != nums[i]	检查目标位置是否已经有正确的数
+    while 循环	持续处理，直到当前位置无法再调整
+    swap 交换	把数放到它正确的位置
+ */
+class Solution {
+    public int firstMissingPositive(int[] nums) {
+        int n = nums.length;
+        
+        // 将每个正数放到正确的位置：nums[i] 应该放在索引 nums[i]-1 处
+        for (int i = 0; i < n; i++) {
+            // 注意：使用 while 循环，需要处理交换后新的数
+            while (nums[i] > 0 && nums[i] <= n && nums[nums[i] - 1] != nums[i]) {
+                swap(nums, i, nums[i] - 1);
+            }
+        }
+        
+        // 遍历找出第一个位置不对的数
+        for (int i = 0; i < n; i++) {
+            if (nums[i] != i + 1) {
+                return i + 1;
+            }
+        }
+        
+        // 如果都在正确位置，返回 n+1
+        return n + 1;
+    }
+    
+    private void swap(int[] nums, int i, int j) {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+}
+
 // 类似两数之和 和为K的子数组，存到Hash里，前缀和
 // 这个解法有点离谱哦
 public class Solution {
@@ -2260,6 +2305,52 @@ class Solution {
     找出入度变为 0 的数据，重复第 2 步。
     直至所有数据的入度为 0，得到排序，如果还有数据的入度不为 0，说明图中存在环。
  */
+
+class Solution {
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        // 1. 构建邻接表 + 入度数组
+        List<List<Integer>> adj = new ArrayList<>();
+        int[] indegree = new int[numCourses];
+        
+        for (int i = 0; i < numCourses; i++) {
+            adj.add(new ArrayList<>());
+        }
+        
+        for (int[] pre : prerequisites) {
+            int from = pre[1];  // 先修课
+            int to   = pre[0];  // 后修课
+            adj.get(from).add(to);
+            indegree[to]++;
+        }
+        
+        // 2. 队列放入所有入度为 0 的节点（没有先修要求的课）
+        Queue<Integer> queue = new LinkedList<>();
+        for (int i = 0; i < numCourses; i++) {
+            if (indegree[i] == 0) {
+                queue.offer(i);
+            }
+        }
+        
+        // 3. BFS 拓扑排序
+        int count = 0;  // 已经学完的课程数
+        while (!queue.isEmpty()) {
+            int course = queue.poll();
+            count++;
+            
+            // 把它指向的课程入度都减 1
+            for (int next : adj.get(course)) {
+                indegree[next]--;
+                if (indegree[next] == 0) {
+                    queue.offer(next);
+                }
+            }
+        }
+        
+        // 如果学完的课程数 == 总课程数 → 无环
+        return count == numCourses;
+    }
+}
+
 class Solution {
     public boolean canFinish(int numCourses, int[][] prerequisites) {
         // 构建邻接表
