@@ -1791,26 +1791,33 @@ class Solution {
  */
 class Solution {
     public int[] maxSlidingWindow(int[] nums, int k) {
-        if(nums.length == 0 || k == 0) return new int[0];
-        Deque<Integer> deque = new LinkedList<>();
-        int[] res = new int[nums.length - k + 1];
-        // 未形成窗口
-        for(int i = 0; i < k; i++) {
-            while(!deque.isEmpty() && deque.peekLast() < nums[i])
-                deque.removeLast();
-            deque.addLast(nums[i]);
+        if (nums == null || nums.length == 0 || k == 0) {
+            return new int[0];
         }
-        res[0] = deque.peekFirst();
-        // 形成窗口后
-        for(int i = k; i < nums.length; i++) {
-            if(deque.peekFirst() == nums[i - k])
-                deque.removeFirst();
-            while(!deque.isEmpty() && deque.peekLast() < nums[i])
-                deque.removeLast();
-            deque.addLast(nums[i]);
-            res[i - k + 1] = deque.peekFirst();
+        
+        int n = nums.length;
+        int[] result = new int[n - k + 1];
+        Deque<Integer> deque = new ArrayDeque<>();  // 存储索引
+        
+        for (int i = 0; i < n; i++) {
+            // 1. 移除队尾所有小于当前元素的值（保持单调递减）
+            while (!deque.isEmpty() && nums[deque.peekLast()] <= nums[i]) {
+                deque.pollLast();
+            }
+            deque.offerLast(i);
+            
+            // 2. 移除队首超出窗口左边界（i - k）的索引
+            if (deque.peekFirst() == i - k) {
+                deque.pollFirst();
+            }
+            
+            // 3. 当窗口形成后（i >= k-1），记录结果（队首即当前窗口最大值）
+            if (i >= k - 1) {
+                result[i - k + 1] = nums[deque.peekFirst()];
+            }
         }
-        return res;
+        
+        return result;
     }
 }
 
@@ -2405,61 +2412,59 @@ class Solution {
  * 
  */
 class Trie {
-    // 新建一个TrieNode类，为什么不直接用数组呢，是多了个isEnd，减少花销
-    class TrieNode{
-        private boolean isEnd;
-        // 注意这里声明的数组,一般不会在构造方法中调用自己的
-        TrieNode[] child;
-        TrieNode(){
+    // 内部节点类
+    private class TrieNode {
+        private TrieNode[] children;  // 子节点数组
+        private boolean isEnd;        // 是否为单词结尾
+        
+        public TrieNode() {
+            children = new TrieNode[26];  // 仅处理小写字母
             isEnd = false;
-            // 一般是不会在在这里new自己，这里是new了一个数组，并不是new自己
-            // 可以参考这篇文章中间下面解释很好 https://bbs.csdn.net/topics/370163563
-            child = new TrieNode[26];
         }
     }
-
-    // 成员变量，根节点
-    TrieNode root;
-    /** Initialize your data structure here. */
+    
+    private TrieNode root;  // 根节点（不存储字符）
+    
+    /** 初始化 Trie 树 */
     public Trie() {
         root = new TrieNode();
     }
-
-    /** Inserts a word into the trie. */
+    
+    /** 插入单词 word */
     public void insert(String word) {
-        // 注意各个方法的root应该是最原始的，不应该相互影响
-        TrieNode root = this.root;
-        for (char c : word.toCharArray()){
-            if (root.child[c-'a']==null){
-                root.child[c-'a'] = new TrieNode();
+        TrieNode node = root;
+        for (char ch : word.toCharArray()) {
+            int idx = ch - 'a';
+            if (node.children[idx] == null) {
+                node.children[idx] = new TrieNode();
             }
-            root = root.child[c-'a'];
+            node = node.children[idx];
         }
-        root.isEnd = true;
+        node.isEnd = true;  // 标记为单词结尾
     }
-
-    /** Returns if the word is in the trie. */
+    
+    /** 搜索单词 word 是否完整存在 */
     public boolean search(String word) {
-        TrieNode root = this.root;
-        for (char c : word.toCharArray()){
-            if (root.child[c-'a']==null){
-                return false;
-            }
-            root = root.child[c-'a'];
-        }
-        return root.isEnd;
+        TrieNode node = searchPrefix(word);
+        return node != null && node.isEnd;
     }
-
-    /** Returns if there is any word in the trie that starts with the given prefix. */
+    
+    /** 判断是否存在以 prefix 为前缀的单词 */
     public boolean startsWith(String prefix) {
-        TrieNode root = this.root;
-        for (char c : prefix.toCharArray()){
-            if (root.child[c-'a']==null){
-                return false;
+        return searchPrefix(prefix) != null;
+    }
+    
+    /** 辅助方法：查找某个字符串对应的最后一个节点，不存在返回 null */
+    private TrieNode searchPrefix(String str) {
+        TrieNode node = root;
+        for (char ch : str.toCharArray()) {
+            int idx = ch - 'a';
+            if (node.children[idx] == null) {
+                return null;
             }
-            root = root.child[c-'a'];
+            node = node.children[idx];
         }
-        return true;
+        return node;
     }
 }
 
@@ -2538,29 +2543,32 @@ class Solution {
 
 // 组合总和
 // DFS+回溯
+// 注意这个可以重复选，和和为K的子数组区别 哪个要用前缀
 class Solution {
-    List<List<Integer>> res = new ArrayList<>();
     public List<List<Integer>> combinationSum(int[] candidates, int target) {
-        // 其实是一个子集问题，用子集的套路
-        LinkedList<Integer> marr = new LinkedList<>();
-        tracebace(candidates, target, marr, 0);
-        return res;
-
+        List<List<Integer>> result = new ArrayList<>();
+        List<Integer> path = new ArrayList<>();
+        // 排序可以帮助剪枝
+        Arrays.sort(candidates);
+        dfs(candidates, target, 0, 0, path, result);
+        return result;
     }
 
-    public void tracebace(int[] candidates, int target, LinkedList<Integer> marr, int sum){
-        // 不符合的情况
-        if (sum>target) return;
-        if (sum==target){
-            res.add(new LinkedList<>(marr));
+    private void dfs(int[] candidates, int target, int start, 
+                     int sum, List<Integer> path, List<List<Integer>> result) {
+        if (sum == target) {
+            result.add(new ArrayList<>(path));
             return;
         }
-        // 尝试添加下个数
-        for (int i=0; i<candidates.length; i++){
-            if (!marr.isEmpty()&&candidates[i]<marr.get(marr.size()-1)) continue;
-            marr.add(candidates[i]);
-            tracebace(candidates, target, marr, sum+candidates[i]);
-            marr.removeLast();
+        for (int i = start; i < candidates.length; i++) {
+            // 剪枝：如果当前数字加上sum已经超过target，后面更大，直接跳出
+            if (sum + candidates[i] > target) {
+                break;
+            }
+            path.add(candidates[i]);
+            // 关键：下一层递归仍然从 i 开始（可以重复使用当前数字）
+            dfs(candidates, target, i, sum + candidates[i], path, result);
+            path.remove(path.size() - 1);
         }
     }
 }
@@ -2655,106 +2663,101 @@ class Solution {
     预计算一个二维布尔数组 isPalindrome[i][j] 表示 s[i..j] 是否为回文（用 DP，O(n²) 时间）。
     这样每次判断子串是否回文只需 O(1)。
 */
-class Solution {
+
+// 标准解法
+public class Solution {
     public List<List<String>> partition(String s) {
-        int n = s.length();
-        // 预处理：isPalindrome[i][j] 表示 s[i..j] 是否是回文
-        boolean[][] isPalindrome = new boolean[n][n];
-        for (int i = 0; i < n; i++) {
-            Arrays.fill(isPalindrome[i], true); // 单字符一定是回文
-        }
-        // 注意这里的dp判断
-        // 这里i=n-1实际上是进不去的
-        /*
-            为什么要从右往左、从短到长填表？（DP 的依赖顺序）
-            回文判断具有最优子结构：
-            s[i..j] 是回文 当且仅当：
-                s[i] == s[j] 并且
-                s[i+1 .. j-1] 也是回文
-            所以我们在填 isPalindrome[i][j] 时，必须已经知道 isPalindrome[i+1][j-1] 的结果。
-            因此必须按照长度从小到大来计算，而 i 从大到小、j 从小到大，正好满足这个依赖关系。
-        */
-        for (int i = n - 1; i >= 0; i--) {
-            for (int j = i + 1; j < n; j++) {
-                isPalindrome[i][j] = (s.charAt(i) == s.charAt(j)) && isPalindrome[i + 1][j - 1];
-            }
-        }
-        
         List<List<String>> result = new ArrayList<>();
-        List<String> path = new ArrayList<>();
-        backtrack(s, 0, isPalindrome, path, result);
+        backtrack(s, 0, new ArrayList<>(), result);
         return result;
     }
     
-    /* 
-        s = "aab"
-        start = 2：说明前面已经分割完了 "aa"，现在要从下标 2 开始继续分割（即字符 'b'）
-        isPalindrome：用来快速判断 s[2..2] 是否是回文（是）
-        path = ["aa"]：目前已经选择的分割方案
-        result：最终要收集所有合法方案的容器
-    */
-    private void backtrack(String s, int start, boolean[][] isPalindrome,
-                           List<String> path, List<List<String>> result) {
+    private void backtrack(String s, int start, List<String> path, List<List<String>> result) {
+        // 终止条件：已经分割到字符串末尾
         if (start == s.length()) {
-            result.add(new ArrayList<>(path));  // 找到一个合法分割，深拷贝加入答案
+            result.add(new ArrayList<>(path));
             return;
         }
         
+        // 从 start 开始，尝试所有可能的结束位置
         for (int end = start; end < s.length(); end++) {
-            if (isPalindrome[start][end]) {     // 当前子串是回文
-                path.add(s.substring(start, end + 1));
-                backtrack(s, end + 1, isPalindrome, path, result);
-                path.remove(path.size() - 1);   // 回溯
+            String substring = s.substring(start, end + 1);
+            
+            // 如果是回文串，才继续往下分割
+            if (isPalindrome(s, start, end)) {
+                path.add(substring);           // 做出选择
+                backtrack(s, end + 1, path, result); // 进入下一层
+                path.remove(path.size() - 1);  // 撤销选择（回溯）
             }
         }
     }
+    
+    // 判断 s[left..right] 是否为回文串
+    private boolean isPalindrome(String s, int left, int right) {
+        while (left < right) {
+            if (s.charAt(left) != s.charAt(right)) {
+                return false;
+            }
+            left++;
+            right--;
+        }
+        return true;
+    }
 }
 
-class Solution {
+// 优化版本 DP 预处理 + 回溯
+public class Solution {
+    
     public List<List<String>> partition(String s) {
         List<List<String>> result = new ArrayList<>();
-        if (s == null || s.length() == 0) return result;
-        
-        // 记忆化：存储已经计算过的回文判断
-        Boolean[][] memo = new Boolean[s.length()][s.length()];
-        backtrackWithMemo(s, 0, new ArrayList<>(), result, memo);
-        
+        boolean[][] dp = preProcess(s);           // DP 预处理所有回文子串
+        backtrack(s, 0, new ArrayList<>(), result, dp);
         return result;
     }
     
-    private void backtrackWithMemo(String s, int start, List<String> path,
-                                  List<List<String>> result, Boolean[][] memo) {
+    // DP 预处理：dp[i][j] 表示 s[i..j] 是否为回文串
+    private boolean[][] preProcess(String s) {
+        int n = s.length();
+        boolean[][] dp = new boolean[n][n];
+        
+        // 1. 所有单个字符都是回文
+        for (int i = 0; i < n; i++) {
+            dp[i][i] = true;
+        }
+        
+        // 2. 所有两个字符的回文
+        for (int i = 0; i < n - 1; i++) {
+            dp[i][i + 1] = (s.charAt(i) == s.charAt(i + 1));
+        }
+        
+        // 3. 长度 >= 3 的回文（从短到长）
+        for (int len = 3; len <= n; len++) {
+            for (int i = 0; i <= n - len; i++) {
+                int j = i + len - 1;
+                dp[i][j] = (s.charAt(i) == s.charAt(j)) && dp[i + 1][j - 1];
+            }
+        }
+        
+        return dp;
+    }
+    
+    // 回溯函数
+    private void backtrack(String s, int start, List<String> path, 
+                          List<List<String>> result, boolean[][] dp) {
+        
         if (start == s.length()) {
             result.add(new ArrayList<>(path));
             return;
         }
         
         for (int end = start; end < s.length(); end++) {
-            if (isPalindromeWithMemo(s, start, end, memo)) {
-                path.add(s.substring(start, end + 1));
-                backtrackWithMemo(s, end + 1, path, result, memo);
-                path.remove(path.size() - 1);
+            // 使用 DP 快速判断是否为回文
+            if (dp[start][end]) {
+                path.add(s.substring(start, end + 1));     // 做出选择
+                backtrack(s, end + 1, path, result, dp);   // 继续下一层
+                path.remove(path.size() - 1);              // 撤销选择
             }
         }
-    }
-    
-    private boolean isPalindromeWithMemo(String s, int left, int right, Boolean[][] memo) {
-        if (memo[left][right] != null) {
-            return memo[left][right];
-        }
-        
-        int l = left, r = right;
-        while (l < r) {
-            if (s.charAt(l) != s.charAt(r)) {
-                memo[left][right] = false;
-                return false;
-            }
-            l++;
-            r--;
-        }
-        
-        memo[left][right] = true;
-        return true;
     }
 }
 
