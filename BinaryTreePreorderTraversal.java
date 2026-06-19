@@ -10,6 +10,7 @@ class Index {
     }
 }
 
+// https://leetcode.cn/studyplan/top-100-liked/
 
 // 二叉树遍历
 // 递归写法
@@ -949,6 +950,7 @@ public class Solution {
 }
 
 // 反转链表
+// 👉 不是“反转节点”，而是反转每个节点的 next 指针
 class Solution {
     public ListNode reverseList(ListNode head) {
         ListNode cur = head, pre = null;
@@ -1000,6 +1002,24 @@ class Solution {
 
 // 递归
 // “先反转后面的链表，再把当前节点挂到后面链表的末尾”
+/*
+reverseList(1) 等待 reverseList(2)
+    reverseList(2) 等待 reverseList(3)
+        reverseList(3) 等待 reverseList(4)
+            reverseList(4) 等待 reverseList(5)
+                reverseList(5) 返回 5  ← 递推到底
+            ← 回溯：4.next.next(5.next) = 4, 4.next = null  → 返回 5
+        ← 回溯：3.next.next(4.next) = 3, 3.next = null    → 返回 5
+    ← 回溯：2.next.next(3.next) = 2, 2.next = null      → 返回 5
+← 回溯：1.next.next(2.next) = 1, 1.next = null        → 返回 5 (新头)
+
+Q2：为什么一定要执行 head.next = null？
+有两个作用：
+
+防止成环：原链表的头节点（节点1）在反转后应该是尾节点。如果不把 1.next 置空，1 还会指着 2，而 2 又指着 1，形成死循环双向环。
+
+切断旧引用：虽然在回溯过程中每一层都会覆盖上一层设的值，但把当前节点的 next 置空是标准的安全写法，确保最终尾节点指向 null。
+ */
 public ListNode reverseList(ListNode head) {
     // 边界
     if (head == null || head.next == null) {
@@ -1020,22 +1040,38 @@ public ListNode reverseList(ListNode head) {
 }
 
 // 反转链表前 N 个节点（进阶）
-// 全局变量，记录第 n+1 个节点（反转完成后要接上）
-ListNode successor = null;
-
-public ListNode reverseN(ListNode head, int n) {
-    if (n == 1) {
-        // 记录第 n+1 个节点
-        successor = head.next;
-        return head;
+// 记录第 n+1 个节点（反转完成后要接上）
+class Solution {
+    
+    /**
+     * 反转链表前 N 个节点（标准反转指针写法）
+     * @param head 链表头节点
+     * @param n    要反转的前 n 个节点（1 <= n <= 链表长度）
+     * @return 反转后的新头节点
+     */
+    public ListNode reverseN(ListNode head, int n) {
+        if (head == null || n == 1) {
+            return head;
+        }
+        
+        ListNode curr = head;
+        ListNode pre = null;
+        ListNode tail = head;   // 记住原头节点（反转后会成为第 N 个节点，即新尾部）
+        
+        // 标准反转前 N 个节点
+        for (int i = 1; i <= n; i++) {
+            ListNode nextTemp = curr.next;   // 保存下一个节点
+            
+            curr.next = pre;                 // 反转指针
+            pre = curr;                      // pre 后移
+            curr = nextTemp;                 // curr 后移
+        }
+        
+        // 连接反转后的尾部到剩余链表
+        tail.next = curr;
+        
+        return pre;   // pre 现在是反转后的新头节点
     }
-    
-    ListNode newHead = reverseN(head.next, n - 1);
-    
-    head.next.next = head;
-    head.next = successor;
-    
-    return newHead;
 }
 
 // 反转链表的某一段
@@ -1045,30 +1081,46 @@ public ListNode reverseN(ListNode head, int n) {
     找到 left 前一个节点（pre）
     反转从 left 到 right 这段
     把 pre 接上新的头，把 right 接上原来的后续
+
  */
-public ListNode reverseBetween(ListNode head, int left, int right) {
-    // 哑节点方便处理头节点情况
-    ListNode dummy = new ListNode(0);
-    dummy.next = head;
-    ListNode pre = dummy;
-    
-    // 找到 left 前一个节点
-    for (int i = 0; i < left - 1; i++) {
-        pre = pre.next;
+class Solution {
+    public ListNode reverseBetween(ListNode head, int left, int right) {
+        if (head == null || left == right) {
+            return head;
+        }
+        
+        // 虚拟头节点，方便处理 left = 1 的情况
+        ListNode dummy = new ListNode(0, head);
+        ListNode prev = dummy;   // prev 指向 left 前一个节点
+        
+        // 1. 找到 left 前一个节点
+        for (int i = 1; i < left; i++) {
+            prev = prev.next;
+        }
+        
+        // 2. 开始反转区间 [left, right]
+        ListNode leftNode = prev.next;   // 记住原 left 节点（反转后会成为尾部）
+        ListNode curr = leftNode;
+        ListNode pre = null;             // 用于标准反转
+        
+        // 标准反转：翻转 right - left + 1 个节点
+        for (int i = left; i <= right; i++) {
+            ListNode nextTemp = curr.next;   // 保存下一个节点
+            
+            curr.next = pre;                 // 核心：反转指针
+            pre = curr;                      // pre 后移
+            curr = nextTemp;                 // curr 后移
+        }
+        
+        // 3. 重新连接三部分
+        // prev -> 反转后的新头(pre)
+        prev.next = pre;
+        
+        // 原 leftNode（现在是反转后尾部）连接到 curr（right 后面的节点）
+        leftNode.next = curr;
+        
+        return dummy.next;
     }
-    
-    ListNode start = pre.next;      // 反转段的起点
-    ListNode then = start.next;     // 反转段的下一个
-    
-    // 反转 right - left 次
-    for (int i = 0; i < right - left; i++) {
-        start.next = then.next;
-        then.next = pre.next;
-        pre.next = then;
-        then = start.next;
-    }
-    
-    return dummy.next;
 }
 
 // 回文链表
