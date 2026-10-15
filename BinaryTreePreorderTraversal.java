@@ -1528,6 +1528,31 @@ class Solution {
 
 // 字母异位词分组
 // string排序后用Hash存下
+// 精简写法
+class Solution {
+    public List<List<String>> groupAnagrams(String[] strs) {
+        Map<String, List<String>> map = new HashMap<>();
+        
+        for (String str : strs) {
+            String key = change(str);
+            
+            // 统一使用 ArrayList
+            map.putIfAbsent(key, new ArrayList<>());
+            map.get(key).add(str);
+        }
+        
+        // 直接返回 map 中的所有 value
+        return new ArrayList<>(map.values());
+    }
+    
+    // 将字符串排序后作为分组 key
+    private String change(String str) {
+        char[] charArray = str.toCharArray();
+        Arrays.sort(charArray);
+        return new String(charArray);   // 推荐使用 new String()，更清晰
+    }
+}
+
 class Solution {
     public List<List<String>> groupAnagrams(String[] strs) {
         List<List<String>> lists = new ArrayList<>();
@@ -1809,6 +1834,34 @@ class Solution {
     如何使用这个信息：如果 pre - k 在 Map 中，那么 pre - k 出现的次数表示从不同的起始点到当前点的子数组和为 k 的不同情况。这是因为每一个 pre - k 都对应一个起点，使得从那个起点到当前点的子数组和为 k。
     因此，每当我们找到一个 pre - k 存在于 Map 中时，我们就把它的计数（即之前这种情况发生的次数）加到 count 上，因为这表示我们又找到了相应数量的以当前元素结束的子数组，其和为 k。
  */
+
+// 简化写法
+class Solution {
+    public int subarraySum(int[] nums, int k) {
+        // key: 前缀和   value: 该前缀和出现的次数
+        Map<Integer, Integer> prefixSum = new HashMap<>();
+        prefixSum.put(0, 1);   // 重要！处理从下标0开始的子数组
+        
+        int count = 0;
+        int sum = 0;
+        
+        for (int num : nums) {
+            sum += num;
+            
+            // 查找是否存在前缀和为 sum - k 的情况
+            if (prefixSum.containsKey(sum - k)) {
+                count += prefixSum.get(sum - k);
+            }
+            
+            // 更新当前前缀和的出现次数
+            prefixSum.put(sum, prefixSum.getOrDefault(sum, 0) + 1);
+        }
+        
+        return count;
+    }
+}
+
+
 class Solution {
     public int subarraySum(int[] nums, int k) {
         //假设索引i处的前缀和为preSum(i)(前缀和包含nums[i]的值)
@@ -2906,6 +2959,45 @@ class Solution {
     }
 }
 
+/*
+这里和之前有什么区别
+
+74这里要求 严格全局有序：上一行最后一个元素 < 下一行第一个元素
+240无此要求（只是局部有序）
+
+74这里合法矩阵
+[
+  [1,  3,  5,  7],
+  [10, 11, 16, 20],
+  [23, 30, 34, 60]
+]
+
+240之前合法矩阵
+[
+  [1,  4,  7, 11, 15],
+  [2,  5,  8, 12, 19],
+  [3,  6,  9, 16, 22],
+  [10, 13, 14, 17, 24],
+  [18, 21, 23, 26, 30]
+]
+
+推荐解法与时间复杂度
+
+74 题：
+因为全局有序，可以直接把二维矩阵当成一维有序数组做二分查找。
+时间复杂度：$O(\log(m \times n))$
+也可以先二分找行，再二分找列。
+
+240 题：
+不能直接当一维数组二分（因为不满足全局有序）。
+最优解法：从右上角（或左下角）开始的“楼梯/Z字形”搜索。
+当前值 > target → 向左走
+当前值 < target → 向下走
+
+时间复杂度：$O(m + n)$
+也可以对每一行做二分，时间 $O(m \log n)$
+
+*/
 // 搜索二维矩阵
 // 一次二分搜索就行
 class Solution {
